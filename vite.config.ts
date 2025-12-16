@@ -29,6 +29,7 @@ export default defineConfig(async () => ({
       input: {
         main: path.resolve(__dirname, "index.html"),
         variables: path.resolve(__dirname, "variables.html"),
+        settings: path.resolve(__dirname, "settings.html"),
       },
     },
   },
