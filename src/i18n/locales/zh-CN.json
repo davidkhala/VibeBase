@@ -1,0 +1,147 @@
+{
+  "app": {
+    "name": "VibeBase",
+    "slogan": "版本化你的 Prompt，规模化你的应用"
+  },
+  "welcome": {
+    "title": "欢迎使用 VibeBase",
+    "subtitle": "Prompt 领域的 VS Code + Postman",
+    "openWorkspace": "打开工作区",
+    "description": "选择一个文件夹开始管理你的 Prompt"
+  },
+  "menu": {
+    "file": "文件",
+    "edit": "编辑",
+    "view": "视图",
+    "help": "帮助"
+  },
+  "actions": {
+    "open": "打开",
+    "save": "保存",
+    "run": "运行",
+    "cancel": "取消",
+    "close": "关闭",
+    "use": "使用",
+    "delete": "删除"
+  },
+  "layout": {
+    "navigator": "导航器",
+    "canvas": "编辑区",
+    "inspector": "检查器",
+    "console": "控制台"
+  },
+  "theme": {
+    "light": "亮色模式",
+    "dark": "暗色模式",
+    "system": "跟随系统"
+  },
+  "language": {
+    "zh-CN": "简体中文",
+    "zh-TW": "繁體中文",
+    "en-US": "English"
+  },
+  "inspector": {
+    "execution": "执行",
+    "metadata": "元数据"
+  },
+  "workspace": {
+    "noWorkspace": "未打开工作区",
+    "openFolder": "打开文件夹",
+    "noPrompts": "未找到 Prompt 文件",
+    "promptsFound": "找到 {{count}} 个 Prompt",
+    "newPrompt": "新建 Prompt",
+    "refresh": "刷新"
+  },
+  "editor": {
+    "selectFile": "选择文件开始编辑",
+    "unsavedChanges": "有未保存的更改",
+    "variables": "变量",
+    "noVariables": "未检测到变量"
+  },
+  "variables": {
+    "manager": "全局变量",
+    "yourVariables": "你的全局变量",
+    "useInPrompt": "在任意 Prompt 中使用",
+    "addVariable": "添加变量",
+    "variableKey": "变量名",
+    "defaultValue": "默认值",
+    "noVariablesYet": "还没有变量",
+    "noVariablesDesc": "创建你的第一个全局变量，在所有 Prompt 中复用值",
+    "addFirstVariable": "添加第一个变量",
+    "loading": "加载变量中...",
+    "stored": "已存储在",
+    "saveVariables": "保存变量",
+    "saving": "保存中...",
+    "help": "帮助",
+    "helpTitle": "如何使用全局变量",
+    "helpWhatTitle": "什么是全局变量？",
+    "helpWhatDesc": "全局变量是可以在所有 Prompt 中引用的可复用值。它们帮助你避免重复，让你可以在一个地方轻松更新常用值。",
+    "helpDefineTitle": "如何定义变量",
+    "helpDefineStep1": "点击「添加变量」按钮",
+    "helpDefineStep2": "输入唯一的变量名（例如：",
+    "helpDefineStep3": "输入默认值（例如：",
+    "helpDefineStep4": "点击「保存变量」",
+    "helpUseTitle": "如何在 Prompt 中使用",
+    "helpUseDesc": "在 Markdown Prompt 中使用双花括号引用变量：",
+    "helpBehaviorTitle": "执行行为",
+    "helpBehaviorItem1": "自动替换为",
+    "helpBehaviorItem2": "需要输入（非全局变量）",
+    "helpBehaviorItem3": "你可以在执行时用自定义值覆盖全局变量",
+    "helpUseCasesTitle": "常见使用场景",
+    "helpUseCasesCompany": "公司信息：",
+    "helpUseCasesApi": "API 端点：",
+    "helpUseCasesTest": "测试数据：",
+    "helpUseCasesConstants": "常量：",
+    "helpProTip": "专业提示：",
+    "helpProTipDesc": "全局变量存储在",
+    "helpProTipDesc2": "中，在所有项目间共享。",
+    "helpGotIt": "知道了！"
+  },
+  "metadata": {
+    "title": "Prompt 元数据",
+    "loading": "加载元数据中...",
+    "tags": "标签",
+    "add_tag": "添加",
+    "add_tag_placeholder": "输入标签名称",
+    "llm_config": "LLM 配置",
+    "provider_ref": "提供商引用",
+    "provider_ref_desc": "引用全局 LLM 配置",
+    "no_providers": "未配置提供商",
+    "model_override": "模型覆盖",
+    "model_override_placeholder": "例如：gpt-4o-mini（可选）",
+    "model_override_desc": "覆盖全局配置中的模型",
+    "parameters": "参数",
+    "temperature": "温度",
+    "max_tokens": "最大令牌数",
+    "auto": "自动",
+    "testing": "测试",
+    "test_data": "测试数据路径",
+    "test_data_placeholder": "例如：tests/data.csv",
+    "test_data_desc": "测试数据文件的相对路径",
+    "variables": "变量",
+    "save": "保存元数据",
+    "saving": "保存中...",
+    "saved_successfully": "元数据保存成功！",
+    "save_failed": "保存元数据失败"
+  },
+  "execution": {
+    "variables": "变量",
+    "global": "全局",
+    "enter_variable": "输入 {{variable}}",
+    "environment": "环境",
+    "provider": "提供商",
+    "model": "模型",
+    "config_not_found": "未找到 vibe.config.yaml",
+    "config_not_found_desc": "创建配置文件以使用环境管理",
+    "executing": "执行中...",
+    "no_environment": "未选择环境",
+    "error": "错误",
+    "output": "输出",
+    "metadata": "元数据",
+    "latency": "延迟",
+    "tokens": "令牌数",
+    "cost": "成本",
+    "fill_variables_hint": "填写变量后点击运行按钮执行",
+    "click_run_hint": "点击运行按钮执行 Prompt"
+  }
+}

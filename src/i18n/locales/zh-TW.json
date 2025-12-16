@@ -1,0 +1,147 @@
+{
+  "app": {
+    "name": "VibeBase",
+    "slogan": "版本化你的 Prompt，規模化你的應用"
+  },
+  "welcome": {
+    "title": "歡迎使用 VibeBase",
+    "subtitle": "Prompt 領域的 VS Code + Postman",
+    "openWorkspace": "開啟工作區",
+    "description": "選擇一個資料夾開始管理你的 Prompt"
+  },
+  "menu": {
+    "file": "檔案",
+    "edit": "編輯",
+    "view": "視圖",
+    "help": "說明"
+  },
+  "actions": {
+    "open": "開啟",
+    "save": "儲存",
+    "run": "執行",
+    "cancel": "取消",
+    "close": "關閉",
+    "use": "使用",
+    "delete": "刪除"
+  },
+  "layout": {
+    "navigator": "導航器",
+    "canvas": "編輯區",
+    "inspector": "檢查器",
+    "console": "主控台"
+  },
+  "theme": {
+    "light": "亮色模式",
+    "dark": "暗色模式",
+    "system": "跟隨系統"
+  },
+  "language": {
+    "zh-CN": "簡體中文",
+    "zh-TW": "繁體中文",
+    "en-US": "English"
+  },
+  "workspace": {
+    "noWorkspace": "未開啟工作區",
+    "openFolder": "開啟資料夾",
+    "noPrompts": "未找到 Prompt 檔案",
+    "promptsFound": "找到 {{count}} 個 Prompt",
+    "newPrompt": "新建 Prompt",
+    "refresh": "重新整理"
+  },
+  "editor": {
+    "selectFile": "選擇檔案開始編輯",
+    "unsavedChanges": "有未儲存的變更",
+    "variables": "變數",
+    "noVariables": "未檢測到變數"
+  },
+  "inspector": {
+    "execution": "執行",
+    "metadata": "元資料"
+  },
+  "variables": {
+    "manager": "全域變數",
+    "yourVariables": "你的全域變數",
+    "useInPrompt": "在任意 Prompt 中使用",
+    "addVariable": "新增變數",
+    "variableKey": "變數名稱",
+    "defaultValue": "預設值",
+    "noVariablesYet": "還沒有變數",
+    "noVariablesDesc": "建立你的第一個全域變數，在所有 Prompt 中重複使用",
+    "addFirstVariable": "新增第一個變數",
+    "loading": "載入變數中...",
+    "stored": "已儲存於",
+    "saveVariables": "儲存變數",
+    "saving": "儲存中...",
+    "help": "說明",
+    "helpTitle": "如何使用全域變數",
+    "helpWhatTitle": "什麼是全域變數？",
+    "helpWhatDesc": "全域變數是可以在所有 Prompt 中引用的可重複使用值。它們幫助你避免重複，讓你可以在一個地方輕鬆更新常用值。",
+    "helpDefineTitle": "如何定義變數",
+    "helpDefineStep1": "點擊「新增變數」按鈕",
+    "helpDefineStep2": "輸入唯一的變數名稱（例如：",
+    "helpDefineStep3": "輸入預設值（例如：",
+    "helpDefineStep4": "點擊「儲存變數」",
+    "helpUseTitle": "如何在 Prompt 中使用",
+    "helpUseDesc": "在 Markdown Prompt 中使用雙花括號引用變數：",
+    "helpBehaviorTitle": "執行行為",
+    "helpBehaviorItem1": "自動替換為",
+    "helpBehaviorItem2": "需要輸入（非全域變數）",
+    "helpBehaviorItem3": "你可以在執行時用自訂值覆蓋全域變數",
+    "helpUseCasesTitle": "常見使用情境",
+    "helpUseCasesCompany": "公司資訊：",
+    "helpUseCasesApi": "API 端點：",
+    "helpUseCasesTest": "測試資料：",
+    "helpUseCasesConstants": "常數：",
+    "helpProTip": "專業提示：",
+    "helpProTipDesc": "全域變數儲存在",
+    "helpProTipDesc2": "中，在所有專案間共用。",
+    "helpGotIt": "知道了！"
+  },
+  "metadata": {
+    "title": "Prompt 元資料",
+    "loading": "載入元資料中...",
+    "tags": "標籤",
+    "add_tag": "新增",
+    "add_tag_placeholder": "輸入標籤名稱",
+    "llm_config": "LLM 配置",
+    "provider_ref": "提供商參照",
+    "provider_ref_desc": "參照全域 LLM 配置",
+    "no_providers": "未配置提供商",
+    "model_override": "模型覆寫",
+    "model_override_placeholder": "例如：gpt-4o-mini（選填）",
+    "model_override_desc": "覆寫全域配置中的模型",
+    "parameters": "參數",
+    "temperature": "溫度",
+    "max_tokens": "最大令牌數",
+    "auto": "自動",
+    "testing": "測試",
+    "test_data": "測試資料路徑",
+    "test_data_placeholder": "例如：tests/data.csv",
+    "test_data_desc": "測試資料檔案的相對路徑",
+    "variables": "變數",
+    "save": "儲存元資料",
+    "saving": "儲存中...",
+    "saved_successfully": "元資料儲存成功！",
+    "save_failed": "儲存元資料失敗"
+  },
+  "execution": {
+    "variables": "變數",
+    "global": "全域",
+    "enter_variable": "輸入 {{variable}}",
+    "environment": "環境",
+    "provider": "提供商",
+    "model": "模型",
+    "config_not_found": "未找到 vibe.config.yaml",
+    "config_not_found_desc": "建立配置檔案以使用環境管理",
+    "executing": "執行中...",
+    "no_environment": "未選擇環境",
+    "error": "錯誤",
+    "output": "輸出",
+    "metadata": "元資料",
+    "latency": "延遲",
+    "tokens": "令牌數",
+    "cost": "成本",
+    "fill_variables_hint": "填寫變數後點擊執行按鈕執行",
+    "click_run_hint": "點擊執行按鈕執行 Prompt"
+  }
+}

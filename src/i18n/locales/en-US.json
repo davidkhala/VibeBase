@@ -1,0 +1,147 @@
+{
+  "app": {
+    "name": "VibeBase",
+    "slogan": "Version your vibe, scale your base"
+  },
+  "welcome": {
+    "title": "Welcome to VibeBase",
+    "subtitle": "VS Code + Postman for Prompt Engineering",
+    "openWorkspace": "Open Workspace",
+    "description": "Select a folder to start managing your prompts"
+  },
+  "menu": {
+    "file": "File",
+    "edit": "Edit",
+    "view": "View",
+    "help": "Help"
+  },
+  "actions": {
+    "open": "Open",
+    "save": "Save",
+    "run": "Run",
+    "cancel": "Cancel",
+    "close": "Close",
+    "use": "Use",
+    "delete": "Delete"
+  },
+  "layout": {
+    "navigator": "Navigator",
+    "canvas": "Canvas",
+    "inspector": "Inspector",
+    "console": "Console"
+  },
+  "theme": {
+    "light": "Light Mode",
+    "dark": "Dark Mode",
+    "system": "System"
+  },
+  "language": {
+    "zh-CN": "简体中文",
+    "zh-TW": "繁體中文",
+    "en-US": "English"
+  },
+  "inspector": {
+    "execution": "Execution",
+    "metadata": "Metadata"
+  },
+  "workspace": {
+    "noWorkspace": "No workspace opened",
+    "openFolder": "Open Folder",
+    "noPrompts": "No prompt files found",
+    "promptsFound": "Found {{count}} prompts",
+    "newPrompt": "New Prompt",
+    "refresh": "Refresh"
+  },
+  "editor": {
+    "selectFile": "Select a file to start editing",
+    "unsavedChanges": "Unsaved changes",
+    "variables": "Variables",
+    "noVariables": "No variables detected"
+  },
+  "variables": {
+    "manager": "Global Variables",
+    "yourVariables": "Your Global Variables",
+    "useInPrompt": "in any prompt",
+    "addVariable": "Add Variable",
+    "variableKey": "Variable Key",
+    "defaultValue": "Default Value",
+    "noVariablesYet": "No Variables Yet",
+    "noVariablesDesc": "Create your first global variable to reuse values across all prompts",
+    "addFirstVariable": "Add First Variable",
+    "loading": "Loading variables...",
+    "stored": "Stored in",
+    "saveVariables": "Save Variables",
+    "saving": "Saving...",
+    "help": "Help",
+    "helpTitle": "How to Use Global Variables",
+    "helpWhatTitle": "What are Global Variables?",
+    "helpWhatDesc": "Global variables are reusable values that can be referenced across all your prompts. They help you avoid repetition and make it easy to update common values in one place.",
+    "helpDefineTitle": "How to Define Variables",
+    "helpDefineStep1": "Click \"Add Variable\" button",
+    "helpDefineStep2": "Enter a unique key (e.g., ",
+    "helpDefineStep3": "Enter a default value (e.g., ",
+    "helpDefineStep4": "Click \"Save Variables\"",
+    "helpUseTitle": "How to Use in Prompts",
+    "helpUseDesc": "Reference variables in your Markdown prompts using double curly braces:",
+    "helpBehaviorTitle": "Execution Behavior",
+    "helpBehaviorItem1": "Automatically replaced with",
+    "helpBehaviorItem2": "Requires input (not a global variable)",
+    "helpBehaviorItem3": "You can override global variables with custom values during execution",
+    "helpUseCasesTitle": "Common Use Cases",
+    "helpUseCasesCompany": "Company info:",
+    "helpUseCasesApi": "API endpoints:",
+    "helpUseCasesTest": "Test data:",
+    "helpUseCasesConstants": "Constants:",
+    "helpProTip": "Pro Tip:",
+    "helpProTipDesc": "Global variables are stored in",
+    "helpProTipDesc2": "and shared across all your projects.",
+    "helpGotIt": "Got it!"
+  },
+  "metadata": {
+    "title": "Prompt Metadata",
+    "loading": "Loading metadata...",
+    "tags": "Tags",
+    "add_tag": "Add",
+    "add_tag_placeholder": "Enter tag name",
+    "llm_config": "LLM Configuration",
+    "provider_ref": "Provider Reference",
+    "provider_ref_desc": "References global LLM configuration",
+    "no_providers": "No providers configured",
+    "model_override": "Model Override",
+    "model_override_placeholder": "e.g., gpt-4o-mini (optional)",
+    "model_override_desc": "Override the model from global config",
+    "parameters": "Parameters",
+    "temperature": "Temperature",
+    "max_tokens": "Max Tokens",
+    "auto": "Auto",
+    "testing": "Testing",
+    "test_data": "Test Data Path",
+    "test_data_placeholder": "e.g., tests/data.csv",
+    "test_data_desc": "Relative path to test data file",
+    "variables": "Variables",
+    "save": "Save Metadata",
+    "saving": "Saving...",
+    "saved_successfully": "Metadata saved successfully!",
+    "save_failed": "Failed to save metadata"
+  },
+  "execution": {
+    "variables": "Variables",
+    "global": "Global",
+    "enter_variable": "Enter {{variable}}",
+    "environment": "Environment",
+    "provider": "Provider",
+    "model": "Model",
+    "config_not_found": "vibe.config.yaml not found",
+    "config_not_found_desc": "Create a config file to use environment management",
+    "executing": "Executing...",
+    "no_environment": "No environment selected",
+    "error": "Error",
+    "output": "Output",
+    "metadata": "Metadata",
+    "latency": "Latency",
+    "tokens": "Tokens",
+    "cost": "Cost",
+    "fill_variables_hint": "Fill in variables and click Run to execute",
+    "click_run_hint": "Click Run button to execute Prompt"
+  }
+}
