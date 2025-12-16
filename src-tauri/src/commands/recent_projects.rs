@@ -14,7 +14,7 @@ pub struct RecentProject {
 }
 
 fn get_app_db_path() -> Result<String, String> {
-    let home_dir = dirs::home_dir().ok_or("Failed to get home directory")?;
+    let home_dir = dirs_next::home_dir().ok_or("Failed to get home directory")?;
     let vibebase_dir = home_dir.join(".vibebase");
     std::fs::create_dir_all(&vibebase_dir).map_err(|e| e.to_string())?;
     
