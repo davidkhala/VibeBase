@@ -1,0 +1,82 @@
+{
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devPath": "http://localhost:1420",
+    "distDir": "../dist",
+    "withGlobalTauri": false
+  },
+  "package": {
+    "productName": "VibeBase",
+    "version": "0.1.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "dialog": {
+        "open": true
+      },
+      "fs": {
+        "readDir": true,
+        "readFile": true,
+        "writeFile": true,
+        "scope": [
+          "$HOME/**",
+          "$APPDATA/**",
+          "$APPLOCALDATA/**"
+        ]
+      },
+      "path": {
+        "all": true
+      },
+      "shell": {
+        "open": true
+      },
+      "window": {
+        "all": false,
+        "center": true,
+        "close": true,
+        "create": true,
+        "hide": true,
+        "maximize": true,
+        "minimize": true,
+        "requestUserAttention": true,
+        "setAlwaysOnTop": true,
+        "setDecorations": true,
+        "setFocus": true,
+        "setFullscreen": true,
+        "setIcon": true,
+        "setMaxSize": true,
+        "setMinSize": true,
+        "setPosition": true,
+        "setResizable": true,
+        "setSize": true,
+        "setSkipTaskbar": true,
+        "setTitle": true,
+        "show": true,
+        "startDragging": true,
+        "unmaximize": true,
+        "unminimize": true
+      }
+    },
+    "bundle": {
+      "active": true,
+      "identifier": "dev.vibebase.app",
+      "targets": "all"
+    },
+    "security": {
+      "csp": null
+    },
+    "windows": [
+      {
+        "fullscreen": false,
+        "resizable": true,
+        "title": "VibeBase",
+        "width": 1400,
+        "height": 900,
+        "minWidth": 800,
+        "minHeight": 600
+      }
+    ]
+  }
+}
