@@ -5,6 +5,8 @@
 CREATE TABLE IF NOT EXISTS prompt_files (
     id TEXT PRIMARY KEY,
     file_path TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    description TEXT,
     schema_version TEXT NOT NULL DEFAULT 'v1',
     
     -- LLM Configuration
@@ -170,6 +172,19 @@ CREATE TABLE IF NOT EXISTS evaluation_rules (
 
 CREATE INDEX IF NOT EXISTS idx_evaluation_rules_type ON evaluation_rules(rule_type);
 
+-- File Content History (Version Control)
+CREATE TABLE IF NOT EXISTS file_history (
+    id TEXT PRIMARY KEY,
+    file_path TEXT NOT NULL,
+    content TEXT NOT NULL,
+    content_hash TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_file_history_path ON file_history(file_path);
+CREATE INDEX IF NOT EXISTS idx_file_history_time ON file_history(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_file_history_hash ON file_history(file_path, content_hash);
+
 -- Schema Migrations
 CREATE TABLE IF NOT EXISTS schema_migrations (
     version TEXT PRIMARY KEY,
@@ -179,5 +194,8 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 
 INSERT OR IGNORE INTO schema_migrations (version, applied_at, description)
 VALUES ('1.0.0', strftime('%s', 'now'), 'Initial schema with pure Markdown support');
+
+INSERT OR IGNORE INTO schema_migrations (version, applied_at, description)
+VALUES ('1.1.0', strftime('%s', 'now'), 'Add file_history table for version control');
 
 
