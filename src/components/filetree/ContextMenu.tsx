@@ -1,5 +1,6 @@
 import { FileNode } from "../../stores/workspaceStore";
 import { FilePlus, FolderPlus, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface ContextMenuProps {
   node: FileNode;
@@ -18,6 +19,8 @@ export default function ContextMenu({
   onNewFolder,
   onDelete,
 }: ContextMenuProps) {
+  const { t } = useTranslation();
+
   return (
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
@@ -35,7 +38,7 @@ export default function ContextMenu({
               className="w-full px-3 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2"
             >
               <FilePlus className="w-4 h-4" />
-              New File
+              {t("workspace.newFile")}
             </button>
             <button
               onClick={() => {
@@ -45,7 +48,7 @@ export default function ContextMenu({
               className="w-full px-3 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2"
             >
               <FolderPlus className="w-4 h-4" />
-              New Folder
+              {t("workspace.newFolder")}
             </button>
             <div className="h-px bg-border my-1" />
           </>
@@ -54,7 +57,7 @@ export default function ContextMenu({
         {onDelete && (
           <button
             onClick={() => {
-              if (confirm(`Are you sure you want to delete ${node.name}?`)) {
+              if (confirm(t("workspace.deleteConfirm", { name: node.name }))) {
                 onDelete();
                 onClose();
               }
@@ -62,13 +65,15 @@ export default function ContextMenu({
             className="w-full px-3 py-2 text-left text-sm hover:bg-destructive/10 text-destructive transition-colors flex items-center gap-2"
           >
             <Trash2 className="w-4 h-4" />
-            Delete
+            {t("actions.delete")}
           </button>
         )}
       </div>
     </>
   );
 }
+
+
 
 
 
