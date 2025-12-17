@@ -4,6 +4,9 @@ import { useThemeStore } from "../../stores/themeStore";
 import { editor, languages } from "monaco-editor";
 import { invoke } from "@tauri-apps/api/tauri";
 
+// 模块级别的标志，确保补全提供器只注册一次
+let completionProviderRegistered = false;
+
 interface MonacoEditorProps {
   value: string;
   onChange: (value: string | undefined) => void;
@@ -21,7 +24,6 @@ export default function MonacoEditor({
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
   const decorationsRef = useRef<string[]>([]);
-  const completionProviderRegisteredRef = useRef<boolean>(false);
 
   // Determine Monaco theme based on app theme
   const getMonacoTheme = () => {
@@ -41,6 +43,18 @@ export default function MonacoEditor({
       highlightVariables(editorRef.current, monacoRef.current);
     }
   }, [value]);
+
+  // 清理组件卸载时的装饰器
+  useEffect(() => {
+    return () => {
+      if (editorRef.current) {
+        const model = editorRef.current.getModel();
+        if (model) {
+          model.deltaDecorations(decorationsRef.current, []);
+        }
+      }
+    };
+  }, []);
 
   const handleEditorDidMount = (
     editor: editor.IStandaloneCodeEditor,
@@ -68,10 +82,10 @@ export default function MonacoEditor({
       colors: {},
     });
 
-    // Register completion provider for global variables (only once)
-    if (!completionProviderRegisteredRef.current) {
+    // Register completion provider for global variables (only once globally)
+    if (!completionProviderRegistered) {
       registerVariableCompletionProvider(monaco, language);
-      completionProviderRegisteredRef.current = true;
+      completionProviderRegistered = true;
     }
 
     // 监听内容变化，在 {{ }} 内部时自动触发补全
