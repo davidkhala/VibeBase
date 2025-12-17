@@ -9,10 +9,13 @@ interface LLMProvider {
   provider: string;
   model: string;
   base_url?: string;
+  api_key?: string;
   api_key_source: string;
   api_key_ref?: string;
   api_key_status: string;
   parameters?: string;
+  enabled: boolean;
+  enabled_models?: string;
   is_default: boolean;
 }
 
@@ -27,20 +30,20 @@ interface ProviderModel {
 
 // Built-in provider configurations
 const BUILTIN_PROVIDERS = [
-  { id: "openrouter", name: "OpenRouter", icon: "🔀", description: "Access hundreds of AI models through OpenRouter unified API" },
-  { id: "openai", name: "OpenAI", icon: "⚡", description: "Official OpenAI API for GPT models" },
-  { id: "anthropic", name: "Anthropic", icon: "Ⓐ", description: "Claude models from Anthropic" },
-  { id: "google", name: "Google Gemini", icon: "✦", description: "Google's Gemini AI models" },
-  { id: "aihubmix", name: "AiHubMix", icon: "🤖", description: "AI Hub Mix unified API" },
-  { id: "deepseek", name: "DeepSeek", icon: "🔎", description: "DeepSeek AI models" },
-  { id: "azure", name: "Azure OpenAI", icon: "☁️", description: "Microsoft Azure OpenAI Service" },
-  { id: "github", name: "GitHub Copilot", icon: "🐙", description: "GitHub Copilot models" },
+  { id: "openrouter", name: "OpenRouter", description: "Access hundreds of AI models through OpenRouter unified API" },
+  { id: "openai", name: "OpenAI", description: "Official OpenAI API for GPT models" },
+  { id: "anthropic", name: "Anthropic", description: "Claude models from Anthropic" },
+  { id: "google", name: "Google Gemini", description: "Google's Gemini AI models" },
+  { id: "aihubmix", name: "AiHubMix", description: "AI Hub Mix unified API" },
+  { id: "deepseek", name: "DeepSeek", description: "DeepSeek AI models" },
+  { id: "azure", name: "Azure OpenAI", description: "Microsoft Azure OpenAI Service" },
+  { id: "github", name: "GitHub Copilot", description: "GitHub Copilot models" },
 ];
 
 export default function LLMProviderManager() {
   const { t } = useTranslation();
   const [providers, setProviders] = useState<LLMProvider[]>([]);
-  const [selectedProvider, setSelectedProvider] = useState<string | null>("openrouter");
+  const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [modelSearchQuery, setModelSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -49,7 +52,9 @@ export default function LLMProviderManager() {
   // Selected provider details
   const [apiKey, setApiKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
+  const [providerEnabled, setProviderEnabled] = useState(false);
   const [models, setModels] = useState<ProviderModel[]>([]);
+  const [savedEnabledModels, setSavedEnabledModels] = useState<string[]>([]);
   const [fetchingModels, setFetchingModels] = useState(false);
 
   useEffect(() => {
@@ -61,6 +66,27 @@ export default function LLMProviderManager() {
       setLoading(true);
       const data = await invoke<LLMProvider[]>("list_llm_providers");
       setProviders(data);
+
+      // Auto-select first provider or the one we're currently viewing
+      if (data.length > 0) {
+        let providerToSelect = selectedProvider;
+
+        // If no provider is selected yet, select the first configured one or "openrouter"
+        if (!providerToSelect) {
+          // Try to find a configured provider
+          const configuredProvider = data.find(p => p.api_key_status === "configured");
+          if (configuredProvider) {
+            providerToSelect = configuredProvider.provider;
+          } else {
+            // Default to openrouter
+            providerToSelect = "openrouter";
+          }
+          setSelectedProvider(providerToSelect);
+        }
+
+        // Load details for the selected provider
+        loadProviderDetailsWithData(providerToSelect, data);
+      }
     } catch (error) {
       console.error("Failed to load providers:", error);
     } finally {
@@ -68,81 +94,141 @@ export default function LLMProviderManager() {
     }
   };
 
-  const loadProviderDetails = async (providerName: string) => {
+  const loadProviderDetailsWithData = async (providerName: string, providersList: LLMProvider[]) => {
     try {
-      const provider = providers.find(p => p.name === providerName);
-      if (!provider) {
-        // For built-in providers without config yet
-        setApiKey("");
-        loadDefaultModels(providerName);
-        return;
-      }
+      // Clear models first when loading new provider
+      setModels([]);
+      setSavedEnabledModels([]);
 
-      // Load API key if stored in keychain
-      if (provider.api_key_source === "keychain" && provider.api_key_ref) {
+      // Try to find existing config from the provided list
+      const existingConfig = providersList.find(p => p.provider === providerName || p.name === providerName);
+
+      if (existingConfig) {
+        // Load the full provider details to get the actual API key
         try {
-          const key = await invoke<string>("get_api_key_from_keychain", {
-            keyName: provider.api_key_ref,
+          const fullProvider = await invoke<LLMProvider>("get_llm_provider", {
+            providerName: existingConfig.name,
           });
-          setApiKey(key || "");
-        } catch {
+          setApiKey(fullProvider.api_key || "");
+          setProviderEnabled(fullProvider.enabled);
+
+          // Save enabled models to state and directly display them
+          if (fullProvider.enabled_models) {
+            try {
+              const enabledModelIds = JSON.parse(fullProvider.enabled_models) as string[];
+              setSavedEnabledModels(enabledModelIds);
+
+              // If models already exist (e.g., from previous fetch), update them
+              if (models.length > 0) {
+                setModels(prev => prev.map(m => ({
+                  ...m,
+                  enabled: enabledModelIds.includes(m.id)
+                })));
+              } else if (enabledModelIds.length > 0) {
+                // Directly display saved models without fetching
+                const savedModels = enabledModelIds.map(modelId => ({
+                  id: modelId,
+                  name: modelId,
+                  displayName: modelId,
+                  modelPath: modelId,
+                  enabled: true,
+                  manual: false,
+                }));
+                setModels(savedModels);
+              }
+            } catch (e) {
+              console.error("Failed to parse enabled_models:", e);
+              setSavedEnabledModels([]);
+            }
+          } else {
+            setSavedEnabledModels([]);
+          }
+        } catch (error) {
+          console.error("Error loading provider details:", error);
           setApiKey("");
+          setProviderEnabled(false);
+          setSavedEnabledModels([]);
         }
       } else {
+        // No config yet for this provider - default to disabled
         setApiKey("");
+        setProviderEnabled(false);
+        setSavedEnabledModels([]);
       }
 
-      loadDefaultModels(providerName);
+      // Don't call loadDefaultModels here - it clears models!
+      // Models are already set from saved enabled_models above
     } catch (error) {
       console.error("Failed to load provider details:", error);
     }
   };
 
-  const loadDefaultModels = (providerName: string) => {
-    // Default models based on provider
-    const defaultModels: Record<string, ProviderModel[]> = {
-      openrouter: [
-        { id: "anthropic-haiku-4.5", name: "claude-haiku-4.5", displayName: "Claude Haiku 4.5", modelPath: "anthropic/claude-haiku-4.5", enabled: true, manual: true },
-        { id: "anthropic-opus-4.5", name: "claude-opus-4.5", displayName: "Claude Opus 4.5", modelPath: "anthropic/claude-opus-4.5", enabled: true, manual: true },
-        { id: "anthropic-sonnet-4.5", name: "claude-sonnet-4.5", displayName: "Claude Sonnet 4.5", modelPath: "anthropic/claude-sonnet-4.5", enabled: true, manual: true },
-      ],
-      openai: [
-        { id: "gpt-4o", name: "gpt-4o", displayName: "GPT-4o", modelPath: "gpt-4o", enabled: true },
-        { id: "gpt-4-turbo", name: "gpt-4-turbo", displayName: "GPT-4 Turbo", modelPath: "gpt-4-turbo", enabled: true },
-        { id: "gpt-3.5-turbo", name: "gpt-3.5-turbo", displayName: "GPT-3.5 Turbo", modelPath: "gpt-3.5-turbo", enabled: true },
-      ],
-      anthropic: [
-        { id: "claude-3-opus", name: "claude-3-opus-20240229", displayName: "Claude 3 Opus", modelPath: "claude-3-opus-20240229", enabled: true },
-        { id: "claude-3-sonnet", name: "claude-3-sonnet-20240229", displayName: "Claude 3 Sonnet", modelPath: "claude-3-sonnet-20240229", enabled: true },
-        { id: "claude-3-haiku", name: "claude-3-haiku-20240307", displayName: "Claude 3 Haiku", modelPath: "claude-3-haiku-20240307", enabled: true },
-      ],
-      google: [
-        { id: "gemini-pro", name: "gemini-pro", displayName: "Gemini Pro", modelPath: "gemini-pro", enabled: true },
-        { id: "gemini-pro-vision", name: "gemini-pro-vision", displayName: "Gemini Pro Vision", modelPath: "gemini-pro-vision", enabled: true },
-      ],
-    };
+  const loadProviderDetails = async (providerName: string) => {
+    loadProviderDetailsWithData(providerName, providers);
+  };
 
-    setModels(defaultModels[providerName] || []);
+  const loadDefaultModels = (providerName: string) => {
+    // No default models - require user to fetch
+    setModels([]);
   };
 
   const handleProviderSelect = (providerName: string) => {
     setSelectedProvider(providerName);
-    loadProviderDetails(providerName);
+    loadProviderDetailsWithData(providerName, providers);
   };
 
   const handleFetchModels = async () => {
-    if (!selectedProvider) return;
+    if (!selectedProvider || !apiKey) {
+      alert("Please enter an API Key first");
+      return;
+    }
+
+    await fetchModelsWithKey(apiKey, false);
+  };
+
+  // Internal function to fetch models with a specific API key
+  const fetchModelsWithKey = async (keyToUse: string, isAutoFetch: boolean = false) => {
+    if (!selectedProvider || !keyToUse) {
+      if (!isAutoFetch) {
+        alert("Please enter an API Key first");
+      }
+      return;
+    }
 
     setFetchingModels(true);
     try {
-      // This would call a backend command to fetch available models
-      // For now, just show a placeholder
-      setTimeout(() => {
-        setFetchingModels(false);
-        alert("Model fetching will be implemented soon");
-      }, 1000);
+      const selectedBuiltin = BUILTIN_PROVIDERS.find(p => p.id === selectedProvider);
+      if (!selectedBuiltin) return;
+
+      const modelsList = await invoke<Array<{ id: string, name: string, description?: string }>>("fetch_provider_models", {
+        provider: selectedBuiltin.id,
+        apiKey: keyToUse,
+        baseUrl: undefined,
+      });
+
+      // Use saved enabled models from state
+      const enabledModelIds = savedEnabledModels.length > 0 ? savedEnabledModels : [];
+
+      setModels(modelsList.map((m, index) => ({
+        id: m.id,
+        name: m.id,
+        displayName: m.name,
+        modelPath: m.id,
+        enabled: enabledModelIds.length > 0
+          ? enabledModelIds.includes(m.id)
+          : index === 0, // Enable first model by default only if no existing config
+        manual: false,
+      })));
+
+      if (!isAutoFetch) {
+        setSaved(false);
+      }
     } catch (error) {
       console.error("Failed to fetch models:", error);
+      if (!isAutoFetch) {
+        alert("Failed to fetch models: " + error);
+      }
+    } finally {
       setFetchingModels(false);
     }
   };
@@ -165,13 +251,50 @@ export default function LLMProviderManager() {
     if (!selectedProvider) return;
 
     try {
-      // Save API key and model configurations
-      // TODO: Implement save logic
+      const selectedBuiltin = BUILTIN_PROVIDERS.find(p => p.id === selectedProvider);
+      if (!selectedBuiltin) return;
+
+      // Check if provider already exists
+      const existingProvider = providers.find(p => p.provider === selectedProvider);
+
+      // Get list of enabled model IDs
+      const enabledModelIds = models.filter(m => m.enabled).map(m => m.id);
+
+      const input = {
+        name: existingProvider?.name || `${selectedBuiltin.id}_default`,
+        provider: selectedBuiltin.id,
+        model: models.find(m => m.enabled)?.name || "",
+        base_url: undefined,
+        api_key: apiKey || undefined,
+        api_key_source: "direct",
+        api_key_value: undefined,
+        parameters: JSON.stringify({ temperature: 0.7 }),
+        enabled: providerEnabled,
+        enabled_models: enabledModelIds.length > 0 ? JSON.stringify(enabledModelIds) : undefined,
+        is_default: false,
+      };
+
+      if (existingProvider) {
+        // Update existing provider
+        await invoke("update_llm_provider", {
+          providerName: existingProvider.name,
+          input,
+        });
+      } else {
+        // Create new provider
+        await invoke("save_llm_provider", { input });
+      }
+
+      // Reload providers list
+      await loadProviders();
       setSaved(true);
-      alert(t("providers.saved", "Settings saved successfully"));
+
+      // Show success message
+      const message = t("providers.saved");
+      alert(message);
     } catch (error) {
       console.error("Failed to save:", error);
-      alert(t("providers.saveFailed", "Failed to save settings"));
+      alert(t("providers.saveFailed") + ": " + error);
     }
   };
 
@@ -179,14 +302,80 @@ export default function LLMProviderManager() {
     alert("Add custom provider not yet implemented");
   };
 
+  const handleTestConnection = async () => {
+    if (!selectedProvider || !apiKey) {
+      alert("Please enter an API Key first");
+      return;
+    }
+
+    try {
+      const selectedBuiltin = BUILTIN_PROVIDERS.find(p => p.id === selectedProvider);
+      if (!selectedBuiltin) return;
+
+      const result = await invoke<string>("test_provider_connection", {
+        provider: selectedBuiltin.id,
+        apiKey: apiKey,
+        baseUrl: undefined,
+      });
+
+      alert(result);
+    } catch (error) {
+      console.error("Connection test failed:", error);
+      alert("Connection test failed: " + error);
+    }
+  };
+
+  const handleDeleteProvider = async () => {
+    if (!selectedProvider) return;
+
+    const existingProvider = providers.find(p => p.provider === selectedProvider);
+    if (!existingProvider) {
+      alert("No configuration to delete");
+      return;
+    }
+
+    if (!confirm(t("providers.deleteConfirm", "Delete this provider configuration?"))) {
+      return;
+    }
+
+    try {
+      await invoke("delete_llm_provider", {
+        providerName: existingProvider.name,
+      });
+
+      await loadProviders();
+      setApiKey("");
+      setProviderEnabled(false);
+      setSavedEnabledModels([]);
+      setModels([]);
+      alert("Provider configuration deleted");
+    } catch (error) {
+      console.error("Failed to delete provider:", error);
+      alert("Failed to delete provider: " + error);
+    }
+  };
+
+  const handleToggleProviderEnabled = () => {
+    setProviderEnabled(prev => !prev);
+    setSaved(false);
+  };
+
   const filteredProviders = BUILTIN_PROVIDERS.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredModels = models.filter((m) =>
-    m.displayName.toLowerCase().includes(modelSearchQuery.toLowerCase()) ||
-    m.modelPath.toLowerCase().includes(modelSearchQuery.toLowerCase())
-  );
+  const filteredModels = models
+    .filter((m) =>
+      m.displayName.toLowerCase().includes(modelSearchQuery.toLowerCase()) ||
+      m.modelPath.toLowerCase().includes(modelSearchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      // Enabled models first
+      if (a.enabled && !b.enabled) return -1;
+      if (!a.enabled && b.enabled) return 1;
+      // Then alphabetically by display name
+      return a.displayName.localeCompare(b.displayName);
+    });
 
   const selectedBuiltinProvider = BUILTIN_PROVIDERS.find(
     (p) => p.id === selectedProvider
@@ -247,11 +436,10 @@ export default function LLMProviderManager() {
                     key={provider.id}
                     onClick={() => handleProviderSelect(provider.id)}
                     className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors ${selectedProvider === provider.id
-                        ? "bg-primary/10 border border-primary"
-                        : "hover:bg-accent border border-transparent"
+                      ? "bg-primary/10 border border-primary"
+                      : "hover:bg-accent border border-transparent"
                       }`}
                   >
-                    <span className="text-xl flex-shrink-0">{provider.icon}</span>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-foreground truncate">
                         {provider.name}
@@ -276,7 +464,6 @@ export default function LLMProviderManager() {
               <div className="px-6 py-4 border-b border-border">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3 flex-1">
-                    <span className="text-2xl">{selectedBuiltinProvider.icon}</span>
                     <div className="flex-1 min-w-0">
                       <h3 className="text-lg font-semibold text-foreground">
                         {selectedBuiltinProvider.name}
@@ -287,7 +474,7 @@ export default function LLMProviderManager() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {isProviderConfigured ? (
+                    {isProviderConfigured && providerEnabled ? (
                       <span className="px-3 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
                         {t("providers.active")}
                       </span>
@@ -297,23 +484,29 @@ export default function LLMProviderManager() {
                       </span>
                     )}
                     <button
-                      onClick={() => {
-                        alert("Test connection not yet implemented");
-                      }}
+                      onClick={handleTestConnection}
                       className="p-2 hover:bg-accent rounded-lg transition-colors"
                       title={t("providers.testConnection")}
                     >
                       <Zap className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleToggleModel("all")}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isProviderConfigured ? "bg-primary" : "bg-muted-foreground/20"
+                      onClick={handleToggleProviderEnabled}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${providerEnabled ? "bg-primary" : "bg-muted-foreground/20"
                         }`}
+                      title={providerEnabled ? "Disable provider" : "Enable provider"}
                     >
                       <span
-                        className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${isProviderConfigured ? "translate-x-6" : "translate-x-0.5"
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${providerEnabled ? "translate-x-6" : "translate-x-0.5"
                           }`}
                       />
+                    </button>
+                    <button
+                      onClick={handleDeleteProvider}
+                      className="p-2 hover:bg-destructive/10 rounded-lg transition-colors"
+                      title="Delete configuration"
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
                     </button>
                   </div>
                 </div>
@@ -397,12 +590,15 @@ export default function LLMProviderManager() {
                     ) : (
                       <>
                         <p className="text-xs text-muted-foreground mb-2">
-                          Showing {filteredModels.length} models (enabled first)
+                          {t("providers.showingModels", { count: filteredModels.length })}
                         </p>
                         {filteredModels.map((model) => (
                           <div
                             key={model.id}
-                            className="flex items-center gap-3 p-3 bg-accent/50 rounded-lg"
+                            className={`flex items-center gap-3 p-3 rounded-lg ${!providerEnabled
+                              ? "bg-muted/30 opacity-60"
+                              : "bg-accent/50"
+                              }`}
                           >
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
@@ -414,6 +610,11 @@ export default function LLMProviderManager() {
                                     {t("providers.manual")}
                                   </span>
                                 )}
+                                {!providerEnabled && (
+                                  <span className="px-1.5 py-0.5 text-xs bg-destructive/20 text-destructive rounded">
+                                    Provider Disabled
+                                  </span>
+                                )}
                               </div>
                               <p className="text-xs text-muted-foreground truncate">
                                 {model.modelPath}
@@ -421,15 +622,22 @@ export default function LLMProviderManager() {
                             </div>
                             <button
                               onClick={() => handleDeleteModel(model.id)}
-                              className="p-1.5 hover:bg-destructive/10 rounded transition-colors"
+                              disabled={!providerEnabled}
+                              className="p-1.5 hover:bg-destructive/10 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Delete model"
                             >
                               <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
                             </button>
                             <button
                               onClick={() => handleToggleModel(model.id)}
-                              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${model.enabled ? "bg-primary" : "bg-muted-foreground/20"
+                              disabled={!providerEnabled}
+                              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${!providerEnabled
+                                ? "bg-muted-foreground/10 cursor-not-allowed"
+                                : model.enabled
+                                  ? "bg-primary"
+                                  : "bg-muted-foreground/20"
                                 }`}
+                              title={!providerEnabled ? "Enable provider first" : undefined}
                             >
                               <span
                                 className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${model.enabled ? "translate-x-5" : "translate-x-0.5"
@@ -482,3 +690,4 @@ export default function LLMProviderManager() {
     </div>
   );
 }
+
