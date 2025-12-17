@@ -122,7 +122,7 @@ export default function ExecutionPanel({
         {variables.map((variable) => {
           const isGlobalVariable = globalVariableKeys.has(variable);
           return (
-            <div key={variable} className="space-y-1">
+          <div key={variable} className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                 <span>{variable}</span>
                 {isGlobalVariable && (
@@ -130,20 +130,20 @@ export default function ExecutionPanel({
                     {t("execution.global")}
                   </span>
                 )}
-              </label>
-              <input
-                type="text"
-                value={variableValues[variable] || ""}
-                onChange={(e) =>
-                  setVariableValues({
-                    ...variableValues,
-                    [variable]: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            </label>
+            <input
+              type="text"
+              value={variableValues[variable] || ""}
+              onChange={(e) =>
+                setVariableValues({
+                  ...variableValues,
+                  [variable]: e.target.value,
+                })
+              }
+              className="w-full px-3 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder={t("execution.enter_variable", { variable })}
-              />
-            </div>
+            />
+          </div>
           );
         })}
 
