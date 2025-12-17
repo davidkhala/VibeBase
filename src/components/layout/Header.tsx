@@ -189,12 +189,12 @@ export default function Header() {
             )}
           </div>
         ) : (
-          <div className="flex items-center gap-2">
-            <FolderOpen className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-foreground">
+        <div className="flex items-center gap-2">
+          <FolderOpen className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm font-medium text-foreground">
               {t("workspace.noWorkspace")}
-            </span>
-          </div>
+          </span>
+        </div>
         )}
         {workspace && (
           <>
@@ -208,13 +208,13 @@ export default function Header() {
 
       <div className="flex items-center gap-2">
         {/* Variables Manager */}
-        <button
+          <button
           onClick={openVariablesWindow}
-          className="p-2 hover:bg-accent rounded-md transition-colors"
-          title="Manage Global Variables"
-        >
-          <Layers className="w-4 h-4 text-muted-foreground" />
-        </button>
+            className="p-2 hover:bg-accent rounded-md transition-colors"
+            title="Manage Global Variables"
+          >
+            <Layers className="w-4 h-4 text-muted-foreground" />
+          </button>
 
         {/* Settings */}
         <button
@@ -227,14 +227,14 @@ export default function Header() {
 
         {/* Language Switcher */}
         <div className="relative">
-          <button
+        <button
             onClick={() => setShowLanguageMenu(!showLanguageMenu)}
             className="p-2 hover:bg-accent rounded-md transition-colors flex items-center gap-1"
             title={t(`language.${i18n.language}`)}
-          >
-            <Languages className="w-4 h-4 text-muted-foreground" />
+        >
+          <Languages className="w-4 h-4 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">{getCurrentLanguageDisplay()}</span>
-          </button>
+        </button>
 
           {showLanguageMenu && (
             <>
