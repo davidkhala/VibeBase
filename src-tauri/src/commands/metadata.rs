@@ -30,8 +30,6 @@ pub fn get_prompt_metadata(
     workspace_path: String,
     file_path: String,
 ) -> Result<PromptMetadataResponse, String> {
-    println!("[get_prompt_metadata] workspace: {}, file_path: {}", workspace_path, file_path);
-    
     let workspace = Path::new(&workspace_path);
     
     let db = ProjectDatabase::new(workspace)
@@ -44,21 +42,16 @@ pub fn get_prompt_metadata(
     let metadata = db.get_prompt_metadata(&file_path)
         .map_err(|e| format!("Failed to get metadata: {}", e))?;
     
-    println!("[get_prompt_metadata] tags from db: {:?}", metadata.tags);
-    
-    let response = PromptMetadataResponse {
+    Ok(PromptMetadataResponse {
         id: metadata.id,
         file_path: metadata.file_path,
         provider_ref: metadata.provider_ref,
         model_override: metadata.model_override,
         parameters: metadata.parameters,
-        tags: metadata.tags.clone(),
+        tags: metadata.tags,
         test_data_path: metadata.test_data_path,
         variables: metadata.variables,
-    };
-    
-    println!("[get_prompt_metadata] response.tags: {:?}", response.tags);
-    Ok(response)
+    })
 }
 
 /// Save metadata for a prompt file
@@ -67,9 +60,6 @@ pub fn save_prompt_metadata(
     workspace_path: String,
     metadata: SaveMetadataRequest,
 ) -> Result<(), String> {
-    println!("[save_prompt_metadata] workspace: {}, file_path: {}", workspace_path, metadata.file_path);
-    println!("[save_prompt_metadata] tags: {:?}", metadata.tags);
-    
     let workspace = Path::new(&workspace_path);
     
     let db = ProjectDatabase::new(workspace)
@@ -89,6 +79,5 @@ pub fn save_prompt_metadata(
         metadata.test_data_path.as_deref(),
     ).map_err(|e| format!("Failed to save metadata: {}", e))?;
     
-    println!("[save_prompt_metadata] saved successfully");
     Ok(())
 }
