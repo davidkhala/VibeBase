@@ -19,8 +19,35 @@ export default function NewFolderDialog({
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 检查文件夹是否存在
+  const checkFolderExists = (folderName: string): boolean => {
+    if (!workspace || !workspace.file_tree) return false;
+
+    const checkInFolder = (node: any): boolean => {
+      if (node.type === "folder") {
+        if (node.path === parentPath) {
+          // 找到目标文件夹，检查是否有同名子文件夹
+          return node.children.some((child: any) =>
+            child.type === "folder" && child.name === folderName
+          );
+        }
+        // 递归检查子文件夹
+        return node.children.some((child: any) => checkInFolder(child));
+      }
+      return false;
+    };
+
+    return checkInFolder(workspace.file_tree);
+  };
+
   const handleCreate = async () => {
     if (!workspace || !folderName) return;
+
+    // 检查文件夹是否已存在
+    if (checkFolderExists(folderName)) {
+      setError(`文件夹已存在: ${folderName}`);
+      return;
+    }
 
     const folderPath = `${parentPath}/${folderName}`;
 
@@ -118,6 +145,8 @@ export default function NewFolderDialog({
     </div>
   );
 }
+
+
 
 
 
