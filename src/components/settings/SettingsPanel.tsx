@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X, Moon, Sun, Languages, Download, Upload, RotateCcw, Monitor } from "lucide-react";
 import { Settings, Package, Plug, FolderOpen, Keyboard, Info } from "lucide-react";
 import LLMProviderManager from "./LLMProviderManager";
+import WorkspaceManager from "./WorkspaceManager";
 import { appWindow } from "@tauri-apps/api/window";
 import { useTranslation } from "react-i18next";
 import { useThemeStore } from "../../stores/themeStore";
@@ -154,6 +155,7 @@ export default function SettingsPanel({ onClose, isStandaloneWindow = false }: S
           {/* Main Content Area */}
           <div className="flex-1 overflow-auto">
             {activeTab === "providers" && <LLMProviderManager />}
+            {activeTab === "workspace" && <WorkspaceManager />}
             {activeTab === "general" && (
               <div className="p-8 max-w-3xl mx-auto space-y-8">
                 <div>
@@ -246,7 +248,7 @@ export default function SettingsPanel({ onClose, isStandaloneWindow = false }: S
                 </div>
               </div>
             )}
-            {activeTab !== "providers" && activeTab !== "general" && (
+            {activeTab !== "providers" && activeTab !== "general" && activeTab !== "workspace" && (
               <div className="flex items-center justify-center h-full">
                 <p className="text-muted-foreground">{menuItems.find(m => m.id === activeTab)?.label} settings coming soon...</p>
               </div>
