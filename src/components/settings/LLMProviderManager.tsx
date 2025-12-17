@@ -112,20 +112,25 @@ export default function LLMProviderManager() {
           setApiKey(fullProvider.api_key || "");
           setProviderEnabled(fullProvider.enabled);
 
-          // Save enabled models to state and directly display them
+          // Save enabled models to state and display all saved models
+          console.log("[loadProviderDetails] fullProvider.enabled_models:", fullProvider.enabled_models);
           if (fullProvider.enabled_models) {
             try {
               const enabledModelIds = JSON.parse(fullProvider.enabled_models) as string[];
+              console.log("[loadProviderDetails] enabledModelIds:", enabledModelIds);
+              console.log("[loadProviderDetails] enabledModelIds.length:", enabledModelIds.length);
               setSavedEnabledModels(enabledModelIds);
 
               // If models already exist (e.g., from previous fetch), update them
               if (models.length > 0) {
+                console.log("[loadProviderDetails] Branch A: updating existing models");
                 setModels(prev => prev.map(m => ({
                   ...m,
                   enabled: enabledModelIds.includes(m.id)
                 })));
               } else if (enabledModelIds.length > 0) {
-                // Directly display saved models without fetching
+                // Display all saved models
+                console.log("[loadProviderDetails] Branch B: creating new model list");
                 const savedModels = enabledModelIds.map(modelId => ({
                   id: modelId,
                   name: modelId,
@@ -134,6 +139,8 @@ export default function LLMProviderManager() {
                   enabled: true,
                   manual: false,
                 }));
+                console.log("[loadProviderDetails] savedModels:", savedModels);
+                console.log("[loadProviderDetails] savedModels.length:", savedModels.length);
                 setModels(savedModels);
               }
             } catch (e) {
@@ -585,13 +592,31 @@ export default function LLMProviderManager() {
                   <div className="space-y-2">
                     {filteredModels.length === 0 ? (
                       <p className="text-sm text-muted-foreground text-center py-4">
-                        {t("providers.noModelsAvailable")}
+                        {modelSearchQuery
+                          ? t("providers.noModelsFound", "未找到匹配的模型")
+                          : t("providers.noModelsAvailable")}
                       </p>
                     ) : (
                       <>
-                        <p className="text-xs text-muted-foreground mb-2">
-                          {t("providers.showingModels", { count: filteredModels.length })}
-                        </p>
+                        <div className="space-y-2 mb-3">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">
+                              {modelSearchQuery
+                                ? `显示 ${filteredModels.length} / ${models.length} 个模型`
+                                : `共 ${models.length} 个模型`}
+                            </span>
+                            <span className="text-muted-foreground">
+                              {models.filter(m => m.enabled).length} 个已启用
+                            </span>
+                          </div>
+                          {models.length > 0 && models.every(m => m.enabled) && (
+                            <div className="px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                              <p className="text-xs text-amber-700 dark:text-amber-300">
+                                💡 当前仅显示已保存的模型。点击上方 <strong>Fetch</strong> 按钮查看所有可用模型。
+                              </p>
+                            </div>
+                          )}
+                        </div>
                         {filteredModels.map((model) => (
                           <div
                             key={model.id}
