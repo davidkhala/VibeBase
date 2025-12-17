@@ -20,6 +20,8 @@ export default function MonacoEditor({
   const { theme } = useThemeStore();
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
+  const decorationsRef = useRef<string[]>([]);
+  const completionProviderRegisteredRef = useRef<boolean>(false);
 
   // Determine Monaco theme based on app theme
   const getMonacoTheme = () => {
@@ -66,8 +68,11 @@ export default function MonacoEditor({
       colors: {},
     });
 
-    // Register completion provider for global variables
-    registerVariableCompletionProvider(monaco, language);
+    // Register completion provider for global variables (only once)
+    if (!completionProviderRegisteredRef.current) {
+      registerVariableCompletionProvider(monaco, language);
+      completionProviderRegisteredRef.current = true;
+    }
 
     // 监听内容变化，在 {{ }} 内部时自动触发补全
     let triggerTimeout: NodeJS.Timeout | null = null;
@@ -208,7 +213,8 @@ export default function MonacoEditor({
       });
     }
 
-    editor.createDecorationsCollection(decorations);
+    // 清除旧的装饰器并应用新的
+    decorationsRef.current = model.deltaDecorations(decorationsRef.current, decorations);
   };
 
   return (
