@@ -1,5 +1,6 @@
 use crate::models::{FileNode, PromptMetadata, Workspace};
 use crate::commands::recent_projects::add_recent_project;
+use crate::services::database::ProjectDatabase;
 use std::fs;
 use std::path::Path;
 use uuid::Uuid;
@@ -39,8 +40,151 @@ pub fn list_prompts(workspace_path: String) -> Result<Vec<PromptMetadata>, Strin
 
 #[tauri::command]
 pub fn create_folder(folder_path: String) -> Result<(), String> {
-    fs::create_dir_all(&folder_path).map_err(|e| e.to_string())?;
+    let path = Path::new(&folder_path);
+    
+    // Check if folder already exists
+    if path.exists() {
+        return Err(format!("文件夹已存在: {}", path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown")));
+    }
+    
+    fs::create_dir_all(&folder_path).map_err(|e| format!("创建文件夹失败: {}", e))?;
     Ok(())
+}
+
+#[tauri::command]
+pub fn move_file(source_path: String, dest_dir: String) -> Result<String, String> {
+    let source = Path::new(&source_path);
+    let dest_directory = Path::new(&dest_dir);
+    
+    if !source.exists() {
+        return Err(format!("Source path does not exist: {}", source_path));
+    }
+    
+    if !dest_directory.exists() {
+        return Err(format!("Destination directory does not exist: {}", dest_dir));
+    }
+    
+    if !dest_directory.is_dir() {
+        return Err(format!("Destination is not a directory: {}", dest_dir));
+    }
+    
+    // Get the file/folder name
+    let file_name = source
+        .file_name()
+        .ok_or_else(|| "Invalid source path".to_string())?;
+    
+    // Build destination path
+    let dest_path = dest_directory.join(file_name);
+    
+    // Check if destination already exists
+    if dest_path.exists() {
+        return Err(format!("Destination already exists: {}", dest_path.display()));
+    }
+    
+    // Move the file or directory
+    fs::rename(&source, &dest_path).map_err(|e| {
+        format!("Failed to move: {}", e)
+    })?;
+    
+    Ok(dest_path.to_str().unwrap_or("").to_string())
+}
+
+#[tauri::command]
+pub fn delete_file(file_path: String) -> Result<(), String> {
+    let path = Path::new(&file_path);
+    
+    if !path.exists() {
+        return Err(format!("路径不存在: {}", file_path));
+    }
+    
+    if path.is_dir() {
+        fs::remove_dir_all(path).map_err(|e| format!("删除文件夹失败: {}", e))?;
+    } else {
+        fs::remove_file(path).map_err(|e| format!("删除文件失败: {}", e))?;
+    }
+    
+    Ok(())
+}
+
+#[tauri::command]
+pub fn delete_file_with_metadata(file_path: String, workspace_path: Option<String>) -> Result<(), String> {
+    let path = Path::new(&file_path);
+    
+    if !path.exists() {
+        return Err(format!("路径不存在: {}", file_path));
+    }
+    
+    // Find workspace path - either provided or find by looking for .vibebase directory
+    let workspace = if let Some(ws) = workspace_path {
+        ws
+    } else {
+        find_workspace_path(&file_path).unwrap_or_default()
+    };
+    
+    // Collect all file paths to delete from database
+    let files_to_delete = if path.is_dir() {
+        collect_vibe_files(&file_path)
+    } else {
+        vec![file_path.clone()]
+    };
+    
+    // Delete from project database if workspace is found
+    if !workspace.is_empty() {
+        if let Ok(db) = ProjectDatabase::new(Path::new(&workspace)) {
+            for file in &files_to_delete {
+                // Delete file history, metadata, and related data
+                let _ = db.delete_file_related_data(file);
+            }
+        }
+    }
+    
+    // Delete from file system
+    if path.is_dir() {
+        fs::remove_dir_all(path).map_err(|e| format!("删除文件夹失败: {}", e))?;
+    } else {
+        fs::remove_file(path).map_err(|e| format!("删除文件失败: {}", e))?;
+    }
+    
+    Ok(())
+}
+
+/// Find the workspace path by looking for .vibebase directory in parent directories
+fn find_workspace_path(file_path: &str) -> Option<String> {
+    let mut current = Path::new(file_path).parent();
+    
+    while let Some(dir) = current {
+        if dir.join(".vibebase").exists() {
+            return dir.to_str().map(|s| s.to_string());
+        }
+        current = dir.parent();
+    }
+    
+    None
+}
+
+/// Collect all .vibe.md and .vibe.yaml files in a directory recursively
+fn collect_vibe_files(dir_path: &str) -> Vec<String> {
+    let mut files = Vec::new();
+    
+    if let Ok(entries) = fs::read_dir(dir_path) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            
+            if path.is_dir() {
+                if let Some(path_str) = path.to_str() {
+                    files.extend(collect_vibe_files(path_str));
+                }
+            } else if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                if name.ends_with(".vibe.md") || name.ends_with(".vibe.yaml") || name.ends_with(".vibe.yml") {
+                    if let Some(path_str) = path.to_str() {
+                        files.push(path_str.to_string());
+                    }
+                }
+            }
+        }
+    }
+    
+    files
 }
 
 fn build_file_tree(root_path: &str, current_path: &str) -> Result<FileNode, String> {
