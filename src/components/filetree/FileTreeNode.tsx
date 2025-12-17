@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { FileNode } from "../../stores/workspaceStore";
 import { ChevronRight, ChevronDown, Folder, File, FileCode } from "lucide-react";
 import { useWorkspaceStore } from "../../stores/workspaceStore";
@@ -9,6 +9,10 @@ interface FileTreeNodeProps {
   onFileClick: (filePath: string) => void;
   onContextMenu: (node: FileNode, e: React.MouseEvent) => void;
   currentFile: string | null;
+  isDragging?: boolean;
+  draggedNode?: FileNode | null;
+  onMouseDownCapture?: (node: FileNode, e: React.MouseEvent) => void;
+  onHoverFolder?: (node: FileNode | null) => void;
 }
 
 export default function FileTreeNode({
@@ -17,17 +21,82 @@ export default function FileTreeNode({
   onFileClick,
   onContextMenu,
   currentFile,
+  isDragging: isBeingDragged,
+  draggedNode,
+  onMouseDownCapture,
+  onHoverFolder,
 }: FileTreeNodeProps) {
   const { toggleFolder } = useWorkspaceStore();
+  const clickTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // 只处理左键
+    if (e.button !== 0) return;
+
+    // 通知父组件开始拖拽检测
+    if (onMouseDownCapture) {
+      onMouseDownCapture(node, e);
+    }
+  };
+
+  const handleMouseEnter = () => {
+    // 只有文件夹在拖拽时才响应 hover
+    if (isBeingDragged && draggedNode && node.type === "folder" && node.path !== draggedNode.path) {
+      console.log("🎯 Hover 文件夹:", node.name);
+      if (onHoverFolder) {
+        onHoverFolder(node);
+      }
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (isBeingDragged && onHoverFolder) {
+      onHoverFolder(null);
+    }
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    // 如果正在拖拽，忽略点击
+    if (isBeingDragged) {
+      e.stopPropagation();
+      return;
+    }
+
+    // 延迟执行点击，确保不是拖拽操作
+    if (clickTimer.current) {
+      clearTimeout(clickTimer.current);
+    }
+
+    clickTimer.current = setTimeout(() => {
+      if (node.type === "folder") {
+        toggleFolder(node.path);
+      } else {
+        onFileClick(node.path);
+      }
+    }, 100);
+  };
+
+  // 判断是否是拖放目标（通过父组件的 dropTarget 来判断，在 Navigator 中会高亮）
+  const isThisBeingDragged = isBeingDragged && draggedNode?.path === node.path;
 
   if (node.type === "folder") {
     return (
       <div>
         <div
-          onClick={() => toggleFolder(node.path)}
-          onContextMenu={(e) => onContextMenu(node, e)}
-          className="flex items-center gap-1 px-2 py-1 hover:bg-accent rounded-md cursor-pointer transition-colors"
-          style={{ paddingLeft: `${level * 12 + 8}px` }}
+          onMouseDown={handleMouseDown}
+          onClick={handleClick}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          onContextMenu={(e) => {
+            e.stopPropagation();
+            onContextMenu(node, e);
+          }}
+          className={`flex items-center gap-1 px-2 py-1 hover:bg-accent rounded-md cursor-pointer transition-colors ${isThisBeingDragged ? "opacity-50" : ""}`}
+          style={{
+            paddingLeft: `${level * 12 + 8}px`,
+            userSelect: 'none',
+            WebkitUserSelect: 'none'
+          }}
         >
           {node.expanded ? (
             <ChevronDown className="w-3 h-3 text-muted-foreground flex-shrink-0" />
@@ -41,12 +110,16 @@ export default function FileTreeNode({
         {node.expanded &&
           node.children.map((child, idx) => (
             <FileTreeNode
-              key={idx}
+              key={`${child.path}-${idx}`}
               node={child}
               level={level + 1}
               onFileClick={onFileClick}
               onContextMenu={onContextMenu}
               currentFile={currentFile}
+              isDragging={isBeingDragged}
+              draggedNode={draggedNode}
+              onMouseDownCapture={onMouseDownCapture}
+              onHoverFolder={onHoverFolder}
             />
           ))}
       </div>
@@ -64,11 +137,19 @@ export default function FileTreeNode({
 
   return (
     <div
-      onClick={() => onFileClick(node.path)}
-      onContextMenu={(e) => onContextMenu(node, e)}
+      onMouseDown={handleMouseDown}
+      onClick={handleClick}
+      onContextMenu={(e) => {
+        e.stopPropagation();
+        onContextMenu(node, e);
+      }}
       className={`flex items-center gap-2 px-2 py-1 hover:bg-accent rounded-md cursor-pointer transition-colors ${isActive ? "bg-accent" : ""
-        }`}
-      style={{ paddingLeft: `${level * 12 + 20}px` }}
+        } ${isThisBeingDragged ? "opacity-50" : ""}`}
+      style={{
+        paddingLeft: `${level * 12 + 20}px`,
+        userSelect: 'none',
+        WebkitUserSelect: 'none'
+      }}
     >
       <Icon
         className={`w-4 h-4 flex-shrink-0 ${node.is_vibe_file ? "text-primary" : "text-muted-foreground"
