@@ -16,6 +16,9 @@ use commands::validation::*;
 use commands::variables::*;
 use commands::window::*;
 use commands::recent_projects::*;
+use commands::provider_models::*;
+use commands::history::*;
+use commands::metadata::*;
 
 fn main() {
     let app_state = AppState::new();
@@ -31,6 +34,9 @@ fn main() {
             open_workspace,
             list_prompts,
             create_folder,
+            move_file,
+            delete_file,
+            delete_file_with_metadata,
             read_prompt,
             save_prompt,
             create_new_prompt,
@@ -65,6 +71,14 @@ fn main() {
             add_recent_project,
             remove_recent_project,
             toggle_pin_project,
+            fetch_provider_models,
+            test_provider_connection,
+            save_file_history,
+            get_file_history,
+            get_history_content,
+            apply_history,
+            get_prompt_metadata,
+            save_prompt_metadata,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
