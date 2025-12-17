@@ -8,9 +8,12 @@ CREATE TABLE IF NOT EXISTS llm_providers (
     provider TEXT NOT NULL,
     model TEXT NOT NULL,
     base_url TEXT,
+    api_key TEXT,
     api_key_source TEXT NOT NULL,
     api_key_ref TEXT,
     parameters TEXT,
+    enabled INTEGER DEFAULT 1,
+    enabled_models TEXT,
     is_default INTEGER DEFAULT 0,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
@@ -64,5 +67,7 @@ CREATE TABLE IF NOT EXISTS schema_version (
 
 INSERT OR IGNORE INTO schema_version (version, applied_at) 
 VALUES ('1.0.0', strftime('%s', 'now'));
+
+
 
 
