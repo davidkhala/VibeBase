@@ -18,7 +18,10 @@ pub async fn fetch_provider_models(
         "openrouter" => fetch_openrouter_models(api_key, base_url).await,
         "openai" => fetch_openai_models(api_key, base_url).await,
         "anthropic" => fetch_anthropic_models(api_key, base_url).await,
-        _ => Err(format!("Provider '{}' not supported yet", provider)),
+        "aihubmix" => fetch_aihubmix_models(api_key, base_url).await,
+        "deepseek" => fetch_deepseek_models(api_key, base_url).await,
+        "ollama" => fetch_ollama_models(base_url).await,
+        _ => Err(format!("Provider '{}' model fetching not yet implemented", provider)),
     }
 }
 
@@ -132,7 +135,10 @@ pub async fn test_provider_connection(
         "openrouter" => test_openrouter_connection(api_key, base_url).await,
         "openai" => test_openai_connection(api_key, base_url).await,
         "anthropic" => test_anthropic_connection(api_key, base_url).await,
-        _ => Err(format!("Provider '{}' not supported yet", provider)),
+        "aihubmix" => test_aihubmix_connection(api_key, base_url).await,
+        "deepseek" => test_deepseek_connection(api_key, base_url).await,
+        "ollama" => test_ollama_connection(base_url).await,
+        _ => Err(format!("Provider '{}' connection test not yet implemented", provider)),
     }
 }
 
@@ -183,3 +189,179 @@ async fn test_anthropic_connection(api_key: String, _base_url: Option<String>) -
         Err("Invalid API key format. Anthropic keys should start with 'sk-ant-'".to_string())
     }
 }
+
+async fn fetch_aihubmix_models(api_key: String, base_url: Option<String>) -> Result<Vec<ModelInfo>, String> {
+    // AiHubMix 使用 OpenAI 兼容接口
+    let url = format!("{}/models", base_url.unwrap_or_else(|| "https://aihubmix.com/v1".to_string()));
+    
+    let client = reqwest::Client::new();
+    let response = client
+        .get(&url)
+        .header("Authorization", format!("Bearer {}", api_key))
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {}", e))?;
+
+    if !response.status().is_success() {
+        return Err(format!("API returned status: {}", response.status()));
+    }
+
+    #[derive(serde::Deserialize)]
+    struct ModelsResponse {
+        data: Vec<ModelData>,
+    }
+
+    #[derive(serde::Deserialize)]
+    struct ModelData {
+        id: String,
+    }
+
+    let data: ModelsResponse = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse response: {}", e))?;
+
+    Ok(data.data.into_iter().map(|m| ModelInfo {
+        id: m.id.clone(),
+        name: m.id,
+        description: None,
+    }).collect())
+}
+
+async fn fetch_deepseek_models(api_key: String, base_url: Option<String>) -> Result<Vec<ModelInfo>, String> {
+    // DeepSeek 使用 OpenAI 兼容接口
+    let url = format!("{}/models", base_url.unwrap_or_else(|| "https://api.deepseek.com/v1".to_string()));
+    
+    let client = reqwest::Client::new();
+    let response = client
+        .get(&url)
+        .header("Authorization", format!("Bearer {}", api_key))
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {}", e))?;
+
+    if !response.status().is_success() {
+        return Err(format!("API returned status: {}", response.status()));
+    }
+
+    #[derive(serde::Deserialize)]
+    struct ModelsResponse {
+        data: Vec<ModelData>,
+    }
+
+    #[derive(serde::Deserialize)]
+    struct ModelData {
+        id: String,
+    }
+
+    let data: ModelsResponse = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse response: {}", e))?;
+
+    Ok(data.data.into_iter().map(|m| ModelInfo {
+        id: m.id.clone(),
+        name: m.id,
+        description: None,
+    }).collect())
+}
+
+async fn fetch_ollama_models(base_url: Option<String>) -> Result<Vec<ModelInfo>, String> {
+    // Ollama 使用不同的端点
+    let url = format!("{}/api/tags", base_url.unwrap_or_else(|| "http://localhost:11434".to_string()));
+    
+    let client = reqwest::Client::new();
+    let response = client
+        .get(&url)
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {}", e))?;
+
+    if !response.status().is_success() {
+        return Err(format!("API returned status: {}", response.status()));
+    }
+
+    #[derive(serde::Deserialize)]
+    struct OllamaResponse {
+        models: Vec<OllamaModel>,
+    }
+
+    #[derive(serde::Deserialize)]
+    struct OllamaModel {
+        name: String,
+    }
+
+    let data: OllamaResponse = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse response: {}", e))?;
+
+    Ok(data.models.into_iter().map(|m| ModelInfo {
+        id: m.name.clone(),
+        name: m.name,
+        description: None,
+    }).collect())
+}
+
+async fn test_aihubmix_connection(api_key: String, base_url: Option<String>) -> Result<String, String> {
+    let url = format!("{}/models", base_url.unwrap_or_else(|| "https://aihubmix.com/v1".to_string()));
+    
+    let client = reqwest::Client::new();
+    let response = client
+        .get(&url)
+        .header("Authorization", format!("Bearer {}", api_key))
+        .timeout(std::time::Duration::from_secs(10))
+        .send()
+        .await
+        .map_err(|e| format!("Connection failed: {}", e))?;
+
+    if response.status().is_success() {
+        Ok("Connection successful! API key is valid.".to_string())
+    } else {
+        Err(format!("Connection failed with status: {}", response.status()))
+    }
+}
+
+async fn test_deepseek_connection(api_key: String, base_url: Option<String>) -> Result<String, String> {
+    let url = format!("{}/models", base_url.unwrap_or_else(|| "https://api.deepseek.com/v1".to_string()));
+    
+    let client = reqwest::Client::new();
+    let response = client
+        .get(&url)
+        .header("Authorization", format!("Bearer {}", api_key))
+        .timeout(std::time::Duration::from_secs(10))
+        .send()
+        .await
+        .map_err(|e| format!("Connection failed: {}", e))?;
+
+    if response.status().is_success() {
+        Ok("Connection successful! API key is valid.".to_string())
+    } else {
+        Err(format!("Connection failed with status: {}", response.status()))
+    }
+}
+
+async fn test_ollama_connection(base_url: Option<String>) -> Result<String, String> {
+    let url = format!("{}/api/tags", base_url.unwrap_or_else(|| "http://localhost:11434".to_string()));
+    
+    let client = reqwest::Client::new();
+    let response = client
+        .get(&url)
+        .timeout(std::time::Duration::from_secs(5))
+        .send()
+        .await
+        .map_err(|e| format!("Connection failed: {}", e))?;
+
+    if response.status().is_success() {
+        Ok("Connection successful! Ollama is running.".to_string())
+    } else {
+        Err(format!("Connection failed with status: {}", response.status()))
+    }
+}
+
+
+
+
+
+
+
