@@ -620,3 +620,121 @@ pub fn get_arena_battles(
     println!("[Rust] Found {} arena battles", battles.len());
     Ok(battles)
 }
+
+#[tauri::command]
+pub fn get_arena_statistics(
+    workspace_path: String,
+) -> Result<serde_json::Value, String> {
+    use std::collections::HashMap;
+    use serde_json::json;
+    
+    let db = ProjectDatabase::new(Path::new(&workspace_path))
+        .map_err(|e| format!("Failed to open project database: {}", e))?;
+    
+    let battles = db.get_arena_battles(None, 1000)
+        .map_err(|e| format!("Failed to get arena battles: {}", e))?;
+    
+    // 统计数据结构
+    let mut model_votes: HashMap<String, i32> = HashMap::new();
+    let mut model_wins: HashMap<String, i32> = HashMap::new();
+    let mut provider_tokens: HashMap<String, (i64, i64)> = HashMap::new(); // (input, output)
+    let mut provider_latency: HashMap<String, Vec<i64>> = HashMap::new();
+    let mut provider_cost: HashMap<String, f64> = HashMap::new();
+    let mut model_tokens: HashMap<String, (i64, i64)> = HashMap::new();
+    let mut model_latency: HashMap<String, Vec<i64>> = HashMap::new();
+    let mut model_cost: HashMap<String, f64> = HashMap::new();
+    let mut unique_models: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut total_model_appearances: i32 = 0;
+    
+    for battle in battles.iter() {
+        // 统计获胜者
+        if let Some(ref winner) = battle.winner_model {
+            *model_wins.entry(winner.clone()).or_insert(0) += 1;
+        }
+        
+        // 统计投票
+        if let Some(ref votes_str) = battle.votes {
+            if let Ok(votes) = serde_json::from_str::<HashMap<String, i32>>(votes_str) {
+                for (model, count) in votes {
+                    *model_votes.entry(model).or_insert(0) += count;
+                }
+            }
+        }
+        
+        // 统计性能数据
+        if let Ok(outputs) = serde_json::from_str::<Vec<serde_json::Value>>(&battle.outputs) {
+            // 统计本次对比的模型数量
+            total_model_appearances += outputs.len() as i32;
+            
+            for output in outputs {
+                // 直接从字段读取，统一数据结构
+                let provider_name = output.get("provider_name")
+                    .and_then(|v| v.as_str())
+                    .or_else(|| output.get("metadata").and_then(|m| m.get("provider")).and_then(|v| v.as_str()))
+                    .unwrap_or("Unknown");
+                    
+                let model_name = output.get("model_name")
+                    .and_then(|v| v.as_str())
+                    .or_else(|| output.get("metadata").and_then(|m| m.get("model")).and_then(|v| v.as_str()))
+                    .unwrap_or("Unknown");
+                
+                // 记录唯一模型（使用 model_name）
+                unique_models.insert(model_name.to_string());
+                
+                if let Some(metadata) = output.get("metadata") {
+                    let tokens_in = metadata.get("tokens_input").and_then(|v| v.as_i64()).unwrap_or(0);
+                    let tokens_out = metadata.get("tokens_output").and_then(|v| v.as_i64()).unwrap_or(0);
+                    let latency = metadata.get("latency_ms").and_then(|v| v.as_i64()).unwrap_or(0);
+                    let cost = metadata.get("cost_usd").and_then(|v| v.as_f64()).unwrap_or(0.0);
+                    
+                    // Provider 统计（直接使用 provider_name）
+                    let provider_token_entry = provider_tokens.entry(provider_name.to_string()).or_insert((0, 0));
+                    provider_token_entry.0 += tokens_in;
+                    provider_token_entry.1 += tokens_out;
+                    
+                    provider_latency.entry(provider_name.to_string()).or_insert_with(Vec::new).push(latency);
+                    *provider_cost.entry(provider_name.to_string()).or_insert(0.0) += cost;
+                    
+                    // Model 统计（直接使用 model_name）
+                    let model_token_entry = model_tokens.entry(model_name.to_string()).or_insert((0, 0));
+                    model_token_entry.0 += tokens_in;
+                    model_token_entry.1 += tokens_out;
+                    
+                    model_latency.entry(model_name.to_string()).or_insert_with(Vec::new).push(latency);
+                    *model_cost.entry(model_name.to_string()).or_insert(0.0) += cost;
+                }
+            }
+        }
+    }
+    
+    // 计算平均延迟
+    let mut provider_avg_latency: HashMap<String, i64> = HashMap::new();
+    for (provider, latencies) in provider_latency.iter() {
+        if !latencies.is_empty() {
+            let avg = latencies.iter().sum::<i64>() / latencies.len() as i64;
+            provider_avg_latency.insert(provider.clone(), avg);
+        }
+    }
+    
+    let mut model_avg_latency: HashMap<String, i64> = HashMap::new();
+    for (model, latencies) in model_latency.iter() {
+        if !latencies.is_empty() {
+            let avg = latencies.iter().sum::<i64>() / latencies.len() as i64;
+            model_avg_latency.insert(model.clone(), avg);
+        }
+    }
+    
+    Ok(json!({
+        "total_battles": battles.len(),
+        "unique_models_count": unique_models.len(),
+        "total_model_appearances": total_model_appearances,
+        "model_votes": model_votes,
+        "model_wins": model_wins,
+        "provider_tokens": provider_tokens,
+        "provider_avg_latency": provider_avg_latency,
+        "provider_cost": provider_cost,
+        "model_tokens": model_tokens,
+        "model_avg_latency": model_avg_latency,
+        "model_cost": model_cost,
+    }))
+}
