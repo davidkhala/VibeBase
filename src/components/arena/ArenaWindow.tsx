@@ -466,11 +466,17 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
 
     try {
       const modelsArray = Array.from(resultsMap.keys());
-      const outputsArray = Array.from(resultsMap.entries()).map(([modelId, result]) => ({
-        model: modelId,
-        output: result.output,
-        metadata: result.metadata,
-      }));
+      const outputsArray = Array.from(resultsMap.entries()).map(([modelId, result]) => {
+        const model = enabledModels.find(m => m.id === modelId);
+        return {
+          model_id: modelId,  // 原始 ID（用于内部引用）
+          provider_name: model?.provider_name || result.metadata.provider,  // Provider 显示名称
+          model_name: model?.model_name || result.metadata.model,  // 模型显示名称
+          provider_type: model?.provider_type || result.metadata.provider,  // Provider 类型
+          output: result.output,
+          metadata: result.metadata,
+        };
+      });
 
       // 使用当前文件内容或文件路径
       const contentToSave = promptContent || filePath;
@@ -525,15 +531,23 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
     if (!battleId || !workspacePath) return;
 
     try {
+      // 使用 model_name 作为 key（与保存时的 model_name 字段对应）
       const votesObject: Record<string, number> = {};
       votesSet.forEach(modelId => {
-        votesObject[modelId] = 1;
+        const model = enabledModels.find(m => m.id === modelId);
+        const modelName = model?.model_name || modelId;
+        votesObject[modelName] = 1;
       });
+
+      // 获胜者也使用 model_name
+      const winnerModelName = winner
+        ? enabledModels.find(m => m.id === winner)?.model_name || winner
+        : null;
 
       await invoke("update_arena_votes", {
         workspacePath: workspacePath,
         battleId: battleId,
-        winnerModel: winner,
+        winnerModel: winnerModelName,
         votes: JSON.stringify(votesObject),
       });
     } catch (error) {
@@ -782,92 +796,106 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
           )}
 
           {(results.size > 0 || loadingModels.size > 0) ? (
-            <div className="flex-1 overflow-x-auto overflow-y-hidden">
-              <div className="flex gap-4 p-4 h-full">
-                {Array.from(selectedModels).map((modelId) => {
-                  const model = enabledModels.find(m => m.id === modelId);
-                  if (!model) return null;
+            (() => {
+              const modelCount = selectedModels.size;
+              const containerClasses = modelCount === 1
+                ? "flex-1 overflow-y-hidden"
+                : modelCount === 2
+                  ? "flex-1 overflow-y-hidden"
+                  : "flex-1 overflow-x-auto overflow-y-hidden";
 
-                  const isLoading = loadingModels.has(modelId);
-                  const result = results.get(modelId);
-                  const error = modelErrors.get(modelId);
+              const gridClasses = modelCount === 1
+                ? "h-full"
+                : modelCount === 2
+                  ? "grid grid-cols-2 gap-4 h-full"
+                  : "flex gap-4 h-full";
 
-                  if (isLoading) {
-                    // 显示加载中的卡片
-                    return (
-                      <VoteCard
-                        key={modelId}
-                        modelId={modelId}
-                        modelName={model.model_name}
-                        providerType={model.provider_type}
-                        output=""
-                        hasVoted={false}
-                        isWinner={false}
-                        isLoading={true}
-                        onVote={() => { }}
-                        onMarkWinner={() => { }}
-                      />
-                    );
-                  } else if (error) {
-                    // 显示错误的卡片
-                    return (
-                      <VoteCard
-                        key={modelId}
-                        modelId={modelId}
-                        modelName={model.model_name}
-                        providerType={model.provider_type}
-                        output=""
-                        hasVoted={false}
-                        isWinner={false}
-                        isLoading={false}
-                        error={error}
-                        onVote={() => { }}
-                        onMarkWinner={() => { }}
-                        onRetry={() => handleRetryModel(modelId)}
-                      />
-                    );
-                  } else if (result) {
-                    // 显示已完成的卡片（有输出）
-                    const displayOutput = streamingOutputs.get(modelId) || result.output;
+              const cardWidthClass = modelCount === 1
+                ? "w-full"
+                : modelCount === 2
+                  ? "w-full"
+                  : "w-[400px] flex-shrink-0";
 
-                    return (
-                      <VoteCard
-                        key={modelId}
-                        modelId={modelId}
-                        modelName={model.model_name}
-                        providerType={model.provider_type}
-                        output={displayOutput}
-                        metadata={result.metadata}
-                        hasVoted={votes.has(modelId)}
-                        isWinner={winnerModel === modelId}
-                        isLoading={false}
-                        onVote={() => handleVote(modelId)}
-                        onMarkWinner={() => handleMarkWinner(modelId)}
-                      />
-                    );
-                  }
+              return (
+                <div className={containerClasses}>
+                  <div className={`${gridClasses} p-4`}>
+                    {Array.from(selectedModels).map((modelId) => {
+                      const model = enabledModels.find(m => m.id === modelId);
+                      if (!model) return null;
 
-                  return null;
-                })}
-              </div>
-            </div>
+                      const isLoading = loadingModels.has(modelId);
+                      const result = results.get(modelId);
+                      const error = modelErrors.get(modelId);
+
+                      if (isLoading) {
+                        // 显示加载中的卡片
+                        return (
+                          <VoteCard
+                            key={modelId}
+                            modelId={modelId}
+                            modelName={model.model_name}
+                            providerType={model.provider_type}
+                            output=""
+                            hasVoted={false}
+                            isWinner={false}
+                            isLoading={true}
+                            cardWidth={cardWidthClass}
+                            onVote={() => { }}
+                            onMarkWinner={() => { }}
+                          />
+                        );
+                      } else if (error) {
+                        // 显示错误的卡片
+                        return (
+                          <VoteCard
+                            key={modelId}
+                            modelId={modelId}
+                            modelName={model.model_name}
+                            providerType={model.provider_type}
+                            output=""
+                            hasVoted={false}
+                            isWinner={false}
+                            isLoading={false}
+                            error={error}
+                            cardWidth={cardWidthClass}
+                            onVote={() => { }}
+                            onMarkWinner={() => { }}
+                            onRetry={() => handleRetryModel(modelId)}
+                          />
+                        );
+                      } else if (result) {
+                        // 显示已完成的卡片（有输出）
+                        const displayOutput = streamingOutputs.get(modelId) || result.output;
+
+                        return (
+                          <VoteCard
+                            key={modelId}
+                            modelId={modelId}
+                            modelName={model.model_name}
+                            providerType={model.provider_type}
+                            output={displayOutput}
+                            metadata={result.metadata}
+                            hasVoted={votes.has(modelId)}
+                            isWinner={winnerModel === modelId}
+                            isLoading={false}
+                            cardWidth={cardWidthClass}
+                            onVote={() => handleVote(modelId)}
+                            onMarkWinner={() => handleMarkWinner(modelId)}
+                          />
+                        );
+                      }
+
+                      return null;
+                    })}
+                  </div>
+                </div>
+              );
+            })()
           ) : (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center text-muted-foreground">
                 <Trophy className="w-16 h-16 mx-auto mb-4 opacity-20" />
                 <p className="text-sm">{t("arena.noResults")}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Bottom Status Bar */}
-          {results.size > 0 && winnerModel && (
-            <div className="border-t border-border p-3 bg-yellow-500/5">
-              <div className="flex items-center justify-center gap-2">
-                <Trophy className="w-4 h-4 text-yellow-600 dark:text-yellow-500" />
-                <span className="text-sm font-medium">
-                  {t("arena.currentWinner")}: {enabledModels.find(m => m.id === winnerModel)?.model_name}
-                </span>
               </div>
             </div>
           )}
