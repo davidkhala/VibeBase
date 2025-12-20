@@ -1,5 +1,4 @@
 use crate::services::database::{AppDatabase, LLMProviderConfig};
-use crate::services::keychain::KeychainService;
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use tauri::State;
@@ -231,6 +230,62 @@ pub fn test_llm_provider_connection(
     
     Ok("Connection test successful (API key configured)".to_string())
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnabledModel {
+    pub id: String,              // 唯一标识：provider_name::model_id
+    pub model_id: String,        // 实际的模型 ID，如 anthropic/claude-3.7-sonnet:thinking
+    pub model_name: String,      // 显示名称，如 claude-3.7-sonnet:thinking
+    pub provider_name: String,   // Provider 配置名称，如 openrouter_default
+    pub provider_type: String,   // Provider 类型，如 openrouter
+}
+
+#[tauri::command]
+pub fn list_enabled_models(state: State<LLMProviderState>) -> Result<Vec<EnabledModel>, String> {
+    let db = state.app_db.lock().map_err(|e| e.to_string())?;
+    let providers = db.list_llm_providers().map_err(|e| e.to_string())?;
+    
+    let mut enabled_models = Vec::new();
+    
+    for provider in providers {
+        // 只处理 enabled 的 provider
+        if !provider.enabled {
+            continue;
+        }
+        
+        // 解析 enabled_models
+        if let Some(models_json) = &provider.enabled_models {
+            match serde_json::from_str::<Vec<String>>(models_json) {
+                Ok(model_ids) => {
+                    for model_id in model_ids {
+                        // 从 model_id 中提取模型名称
+                        // 格式可能是：anthropic/claude-3.7-sonnet:thinking 或 gpt-4o
+                        let model_name = model_id.split('/').last().unwrap_or(&model_id).to_string();
+                        
+                        enabled_models.push(EnabledModel {
+                            id: format!("{}::{}", provider.name, model_id),
+                            model_id: model_id.clone(),
+                            model_name,
+                            provider_name: provider.name.clone(),
+                            provider_type: provider.provider.clone(),
+                        });
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Failed to parse enabled_models for {}: {}", provider.name, e);
+                }
+            }
+        }
+    }
+    
+    Ok(enabled_models)
+}
+
+
+
+
+
+
 
 
 
