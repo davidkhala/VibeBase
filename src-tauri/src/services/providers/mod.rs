@@ -31,8 +31,18 @@ pub async fn execute_with_provider(
             let url = base_url.unwrap_or("http://localhost:11434/v1");
             openai::execute(model, messages, temperature, "", Some(url)).await
         }
+        Provider::AiHubMix => {
+            let url = base_url.unwrap_or("https://aihubmix.com/v1");
+            openai::execute(model, messages, temperature, api_key, Some(url)).await
+        }
+        Provider::Google => {
+            Err("Google Gemini API format is different, requires separate implementation".to_string())
+        }
+        Provider::GitHub => {
+            Err("GitHub Copilot not yet implemented".to_string())
+        }
         Provider::AzureOpenAI => {
-            Err("Azure OpenAI not yet implemented".to_string())
+            Err("Azure OpenAI requires deployment-specific URL configuration".to_string())
         }
     }
 }
