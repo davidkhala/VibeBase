@@ -62,6 +62,12 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
   const [models, setModels] = useState<ProviderModel[]>([]);
   const [savedEnabledModels, setSavedEnabledModels] = useState<string[]>([]);
   const [fetchingModels, setFetchingModels] = useState(false);
+  
+  // Model selection dialog state
+  const [showModelDialog, setShowModelDialog] = useState(false);
+  const [availableModels, setAvailableModels] = useState<ProviderModel[]>([]);
+  const [dialogSearchQuery, setDialogSearchQuery] = useState("");
+  const [selectedModelsInDialog, setSelectedModelsInDialog] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadProviders();
@@ -219,6 +225,75 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
     }
 
     await fetchModelsWithKey(apiKey, false);
+  };
+
+  const handleOpenModelDialog = async () => {
+    if (!selectedProvider || !apiKey) {
+      alert("Please enter an API Key first");
+      return;
+    }
+
+    setFetchingModels(true);
+    try {
+      const selectedBuiltin = BUILTIN_PROVIDERS.find(p => p.id === selectedProvider);
+      if (!selectedBuiltin) return;
+
+      const modelsList = await invoke<Array<{ id: string, name: string, description?: string }>>("fetch_provider_models", {
+        provider: selectedBuiltin.id,
+        apiKey: apiKey,
+        baseUrl: undefined,
+      });
+
+      // Set available models
+      const available = modelsList.map(m => ({
+        id: m.id,
+        name: m.id,
+        displayName: m.name,
+        modelPath: m.id,
+        enabled: false,
+        manual: false,
+      }));
+      setAvailableModels(available);
+      
+      // Pre-select currently enabled models
+      const currentlyEnabled = new Set(models.filter(m => m.enabled).map(m => m.id));
+      setSelectedModelsInDialog(currentlyEnabled);
+      
+      setShowModelDialog(true);
+    } catch (error) {
+      console.error("Failed to fetch models:", error);
+      alert("Failed to fetch models: " + error);
+    } finally {
+      setFetchingModels(false);
+    }
+  };
+
+  const handleConfirmModelSelection = () => {
+    // Update models list with selected models
+    const selectedModelIds = Array.from(selectedModelsInDialog);
+    const updatedModels = availableModels
+      .filter(m => selectedModelIds.includes(m.id))
+      .map(m => ({
+        ...m,
+        enabled: true,
+      }));
+    
+    setModels(updatedModels);
+    setSaved(false);
+    setShowModelDialog(false);
+    setDialogSearchQuery("");
+  };
+
+  const handleToggleModelInDialog = (modelId: string) => {
+    setSelectedModelsInDialog(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(modelId)) {
+        newSet.delete(modelId);
+      } else {
+        newSet.add(modelId);
+      }
+      return newSet;
+    });
   };
 
   // Internal function to fetch models with a specific API key
@@ -409,11 +484,19 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
       m.displayName.toLowerCase().includes(modelSearchQuery.toLowerCase()) ||
       m.modelPath.toLowerCase().includes(modelSearchQuery.toLowerCase())
     )
+    .sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+  const filteredDialogModels = availableModels
+    .filter((m) =>
+      m.displayName.toLowerCase().includes(dialogSearchQuery.toLowerCase()) ||
+      m.modelPath.toLowerCase().includes(dialogSearchQuery.toLowerCase())
+    )
     .sort((a, b) => {
-      // Enabled models first
-      if (a.enabled && !b.enabled) return -1;
-      if (!a.enabled && b.enabled) return 1;
-      // Then alphabetically by display name
+      // Selected models first
+      const aSelected = selectedModelsInDialog.has(a.id);
+      const bSelected = selectedModelsInDialog.has(b.id);
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
       return a.displayName.localeCompare(b.displayName);
     });
 
@@ -601,7 +684,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
                       {t("providers.models")}
                     </label>
                     <button
-                      onClick={handleFetchModels}
+                      onClick={handleOpenModelDialog}
                       disabled={fetchingModels}
                       className="px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded hover:bg-primary/90 disabled:opacity-50"
                     >
@@ -621,34 +704,29 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
                     />
                   </div>
 
-                  {/* Models List */}
+                  {/* Selected Models List */}
                   <div className="space-y-2">
                     {filteredModels.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        {modelSearchQuery
-                          ? t("providers.noModelsFound", "未找到匹配的模型")
-                          : t("providers.noModelsAvailable")}
-                      </p>
+                      <div className="text-center py-8">
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {modelSearchQuery
+                            ? t("providers.noModelsFound", "未找到匹配的模型")
+                            : "尚未选择模型"}
+                        </p>
+                        {!modelSearchQuery && (
+                          <p className="text-xs text-muted-foreground">
+                            点击上方 <strong>Fetch</strong> 按钮选择模型
+                          </p>
+                        )}
+                      </div>
                     ) : (
                       <>
-                        <div className="space-y-2 mb-3">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">
-                              {modelSearchQuery
-                                ? `显示 ${filteredModels.length} / ${models.length} 个模型`
-                                : `共 ${models.length} 个模型`}
-                            </span>
-                            <span className="text-muted-foreground">
-                              {models.filter(m => m.enabled).length} 个已启用
-                            </span>
-                          </div>
-                          {models.length > 0 && models.every(m => m.enabled) && (
-                            <div className="px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                              <p className="text-xs text-amber-700 dark:text-amber-300">
-                                💡 当前仅显示已保存的模型。点击上方 <strong>Fetch</strong> 按钮查看所有可用模型。
-                              </p>
-                            </div>
-                          )}
+                        <div className="flex items-center justify-between text-xs mb-3">
+                          <span className="text-muted-foreground">
+                            {modelSearchQuery
+                              ? `显示 ${filteredModels.length} / ${models.length} 个模型`
+                              : `已选择 ${models.length} 个模型`}
+                          </span>
                         </div>
                         {filteredModels.map((model) => (
                           <div
@@ -663,11 +741,6 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
                                 <span className="text-sm font-medium text-foreground">
                                   {model.displayName}
                                 </span>
-                                {model.manual && (
-                                  <span className="px-1.5 py-0.5 text-xs bg-muted text-muted-foreground rounded">
-                                    {t("providers.manual")}
-                                  </span>
-                                )}
                                 {!providerEnabled && (
                                   <span className="px-1.5 py-0.5 text-xs bg-destructive/20 text-destructive rounded">
                                     Provider Disabled
@@ -682,25 +755,9 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
                               onClick={() => handleDeleteModel(model.id)}
                               disabled={!providerEnabled}
                               className="p-1.5 hover:bg-destructive/10 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                              title="Delete model"
+                              title="移除模型"
                             >
                               <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
-                            </button>
-                            <button
-                              onClick={() => handleToggleModel(model.id)}
-                              disabled={!providerEnabled}
-                              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${!providerEnabled
-                                ? "bg-muted-foreground/10 cursor-not-allowed"
-                                : model.enabled
-                                  ? "bg-primary"
-                                  : "bg-muted-foreground/20"
-                                }`}
-                              title={!providerEnabled ? "Enable provider first" : undefined}
-                            >
-                              <span
-                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${model.enabled ? "translate-x-5" : "translate-x-0.5"
-                                  }`}
-                              />
                             </button>
                           </div>
                         ))}
