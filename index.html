@@ -5,6 +5,31 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VibeBase</title>
+    <!-- 🔥 在 React 加载前同步设置主题，避免闪烁 -->
+    <script>
+      (function() {
+        try {
+          // 读取保存的主题设置
+          const savedTheme = localStorage.getItem('vibebase_theme') || 'system';
+          let effectiveTheme;
+          
+          if (savedTheme === 'system') {
+            // 检测系统主题
+            effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          } else {
+            effectiveTheme = savedTheme;
+          }
+          
+          // 立即应用主题类到 html 元素
+          document.documentElement.classList.add(effectiveTheme);
+          console.log('⚡ Initial theme applied (sync):', effectiveTheme);
+        } catch (e) {
+          console.error('Failed to apply initial theme:', e);
+          // 默认应用 dark 主题
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
