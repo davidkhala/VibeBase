@@ -188,6 +188,40 @@ pub fn open_arena_history_window(window: Window) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub fn open_arena_statistics_window(window: Window) -> Result<(), String> {
+    let app_handle = window.app_handle();
+    
+    // Check if window already exists
+    if let Some(existing_window) = app_handle.get_window("arena_statistics") {
+        existing_window.set_focus().map_err(|e| e.to_string())?;
+        return Ok(());
+    }
+
+    // Create new window without decorations
+    let window_url = if cfg!(debug_assertions) {
+        WindowUrl::External("http://localhost:1420/arena-statistics.html".parse().unwrap())
+    } else {
+        WindowUrl::App("arena-statistics.html".into())
+    };
+
+    WindowBuilder::new(
+        &app_handle,
+        "arena_statistics",
+        window_url
+    )
+    .title("Arena Statistics")
+    .inner_size(1200.0, 800.0)
+    .min_inner_size(1000.0, 600.0)
+    .resizable(true)
+    .center()
+    .decorations(false)
+    .build()
+    .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
 pub fn get_system_theme() -> Result<String, String> {
     #[cfg(target_os = "macos")]
     {
