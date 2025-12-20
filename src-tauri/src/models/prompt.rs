@@ -61,6 +61,12 @@ pub enum Provider {
     Ollama,
     #[serde(rename = "azure_openai")]
     AzureOpenAI,
+    #[serde(rename = "google")]
+    Google,
+    #[serde(rename = "aihubmix")]
+    AiHubMix,
+    #[serde(rename = "github")]
+    GitHub,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
