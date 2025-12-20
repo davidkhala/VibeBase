@@ -21,21 +21,26 @@ use commands::history::*;
 use commands::metadata::*;
 use commands::update::*;
 
+use commands::config::AppSettingsState;
+
 fn main() {
     let app_state = AppState::new();
     let app_db = AppDatabase::new().expect("Failed to initialize app database");
     let llm_provider_state = LLMProviderState::new();
     let variables_state = VariablesState::new(app_db);
+    let app_settings_state = AppSettingsState::new();
 
     tauri::Builder::default()
         .manage(app_state)
         .manage(llm_provider_state)
         .manage(variables_state)
+        .manage(app_settings_state)
         .invoke_handler(tauri::generate_handler![
             open_workspace,
             list_prompts,
             create_folder,
             move_file,
+            rename_file,
             delete_file,
             delete_file_with_metadata,
             read_prompt,
@@ -48,17 +53,21 @@ fn main() {
             execute_prompt,
             get_execution_history,
             read_config,
+            save_config,
             save_api_key_to_keychain,
             get_api_key_from_keychain,
             has_api_key_in_keychain,
             delete_api_key_from_keychain,
             get_api_key_for_environment,
+            get_arena_settings,
+            save_arena_settings,
             list_llm_providers,
             save_llm_provider,
             update_llm_provider,
             delete_llm_provider,
             get_llm_provider,
             test_llm_provider_connection,
+            list_enabled_models,
             validate_prompt_file,
             validate_workspace,
             quick_validate_file,
@@ -68,6 +77,10 @@ fn main() {
             delete_global_variable,
             open_variables_window,
             open_settings_window,
+            open_arena_window,
+            open_arena_history_window,
+            set_window_theme,
+            get_system_theme,
             get_recent_projects,
             add_recent_project,
             remove_recent_project,
@@ -83,6 +96,10 @@ fn main() {
             get_workspace_stats,
             initialize_workspace_db,
             clear_workspace_db,
+            save_arena_battle,
+            update_arena_votes,
+            get_arena_battles,
+            show_in_folder,
             check_for_updates,
             get_app_version,
         ])
