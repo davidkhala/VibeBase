@@ -140,24 +140,24 @@ CREATE INDEX IF NOT EXISTS idx_test_results_prompt ON test_results(prompt_file_i
 CREATE INDEX IF NOT EXISTS idx_test_results_dataset ON test_results(dataset_id);
 CREATE INDEX IF NOT EXISTS idx_test_results_timestamp ON test_results(timestamp DESC);
 
--- Comparison Results (A/B Test)
-CREATE TABLE IF NOT EXISTS comparison_results (
+-- Arena Battles (Multi-Model Comparison Results)
+-- Stores all execution results: single model, multi-model comparison
+CREATE TABLE IF NOT EXISTS arena_battles (
     id TEXT PRIMARY KEY,
-    prompt_file_id TEXT NOT NULL,
-    test_case_index INTEGER NOT NULL,
-    model_a TEXT NOT NULL,
-    model_b TEXT NOT NULL,
-    output_a TEXT NOT NULL,
-    output_b TEXT NOT NULL,
-    winner TEXT,
-    confidence REAL,
-    reasoning TEXT,
+    prompt_file_id TEXT,
+    prompt_content TEXT NOT NULL,
+    input_variables TEXT NOT NULL,     -- JSON: {"var1": "value1", ...}
+    models TEXT NOT NULL,              -- JSON array: ["model1", "model2", ...]
+    outputs TEXT NOT NULL,             -- JSON array: [{"model": "...", "output": "...", "metadata": {...}}, ...]
+    winner_model TEXT,                 -- User voted winner (optional)
+    votes TEXT,                        -- JSON: {"model1": 2, "model2": 5, ...} (optional)
     timestamp INTEGER NOT NULL,
     
-    FOREIGN KEY (prompt_file_id) REFERENCES prompt_files(id) ON DELETE CASCADE
+    FOREIGN KEY (prompt_file_id) REFERENCES prompt_files(id) ON DELETE SET NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_comparison_prompt ON comparison_results(prompt_file_id);
+CREATE INDEX IF NOT EXISTS idx_arena_battles_prompt ON arena_battles(prompt_file_id);
+CREATE INDEX IF NOT EXISTS idx_arena_battles_timestamp ON arena_battles(timestamp DESC);
 
 -- Evaluation Rules (Level 2 Evaluation)
 CREATE TABLE IF NOT EXISTS evaluation_rules (
@@ -197,5 +197,8 @@ VALUES ('1.0.0', strftime('%s', 'now'), 'Initial schema with pure Markdown suppo
 
 INSERT OR IGNORE INTO schema_migrations (version, applied_at, description)
 VALUES ('1.1.0', strftime('%s', 'now'), 'Add file_history table for version control');
+
+INSERT OR IGNORE INTO schema_migrations (version, applied_at, description)
+VALUES ('1.2.0', strftime('%s', 'now'), 'Replace comparison_results with arena_battles table for multi-model support');
 
 
