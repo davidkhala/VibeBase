@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { useTranslation } from "react-i18next";
-import { Search, Eye, EyeOff, Zap, Trash2, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Search, Eye, EyeOff, Zap, Trash2, CheckCircle, XCircle, Loader2, Plus } from "lucide-react";
+import CustomProviderDialog, { CustomProviderData } from "../dialogs/CustomProviderDialog";
 
 interface LLMProvider {
   id: string;
@@ -74,6 +75,10 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
   const [showTestResult, setShowTestResult] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
+  // Custom provider dialog
+  const [showCustomProviderDialog, setShowCustomProviderDialog] = useState(false);
+  const [customProviders, setCustomProviders] = useState<Array<{ id: string; name: string; description: string }>>([]); 
+
   useEffect(() => {
     loadProviders();
   }, []);
@@ -107,6 +112,17 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
       setLoading(true);
       const data = await invoke<LLMProvider[]>("list_llm_providers");
       setProviders(data);
+
+      // 提取自定义 Provider（不在内置列表中的）
+      const builtinIds = BUILTIN_PROVIDERS.map(p => p.id);
+      const custom = data
+        .filter(p => !builtinIds.includes(p.provider) && !p.is_default)
+        .map(p => ({
+          id: p.provider,
+          name: p.name,
+          description: `自定义 Provider - ${p.base_url || 'OpenAI Compatible API'}`,
+        }));
+      setCustomProviders(custom);
 
       // Auto-select first provider or the one we're currently viewing
       if (data.length > 0) {
@@ -427,6 +443,30 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
     } catch (error) {
       console.error("Failed to delete provider:", error);
       alert("Failed to delete provider: " + error);
+    }
+  };
+
+  const handleAddCustomProvider = async (providerData: CustomProviderData) => {
+    try {
+      const input = {
+        name: providerData.name,
+        provider: providerData.name,  // 使用 name 作为 provider type
+        model: "",  // 默认为空，用户可以后续添加
+        base_url: providerData.baseUrl,
+        api_key: "",
+        api_key_source: "direct",
+        enabled: true,
+        enabled_models: "[]",
+      };
+
+      await invoke("save_llm_provider", { input });
+      
+      // 重新加载 Provider 列表并选中新添加的
+      await loadProviders();
+      setSelectedProvider(providerData.name);
+    } catch (error) {
+      console.error("Failed to add custom provider:", error);
+      alert("Failed to add custom provider: " + error);
     }
   };
 
