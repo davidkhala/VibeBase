@@ -10,4 +10,5 @@ pub mod recent_projects;
 pub mod provider_models;
 pub mod history;
 pub mod metadata;
+pub mod update;
 
