@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExecutionRequest {
     pub prompt_content: String,
@@ -46,6 +47,7 @@ pub struct OpenAIMessage {
 
 #[derive(Debug, Deserialize)]
 pub struct OpenAIResponse {
+    #[allow(dead_code)]
     pub id: String,
     pub choices: Vec<OpenAIChoice>,
     pub usage: OpenAIUsage,
@@ -60,6 +62,7 @@ pub struct OpenAIChoice {
 pub struct OpenAIUsage {
     pub prompt_tokens: u32,
     pub completion_tokens: u32,
+    #[allow(dead_code)]
     pub total_tokens: u32,
 }
 
