@@ -94,8 +94,12 @@ fn calculate_cost(model: &str, provider: &Provider, input_tokens: u32, output_to
             "claude-3-5-sonnet-20241022" => (3.0, 15.0),
             _ => (0.0, 0.0),
         },
-        Provider::DeepSeek => (0.14, 0.28), // DeepSeek pricing
-        Provider::Ollama => (0.0, 0.0),     // Local, free
+        Provider::DeepSeek => (0.14, 0.28),     // DeepSeek pricing
+        Provider::Ollama => (0.0, 0.0),         // Local, free
+        Provider::OpenRouter => (0.0, 0.0),     // Depends on model
+        Provider::AiHubMix => (0.0, 0.0),       // Depends on model
+        Provider::Google => (0.0, 0.0),         // Google pricing varies
+        Provider::GitHub => (0.0, 0.0),         // GitHub pricing
         _ => (0.0, 0.0),
     };
 
