@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useThemeStore } from "../../stores/themeStore";
 import { useWorkspaceStore, Workspace } from "../../stores/workspaceStore";
-import { Moon, Sun, Monitor, FolderOpen, Languages, Settings as SettingsIcon, Layers, ChevronDown, History } from "lucide-react";
+import { Moon, Sun, Monitor, FolderOpen, Languages, Settings as SettingsIcon, Layers, ChevronDown, History, BarChart3 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { open } from "@tauri-apps/api/dialog";
@@ -129,6 +129,18 @@ export default function Header() {
     }
   };
 
+  const openArenaStatisticsWindow = async () => {
+    try {
+      // 保存当前 workspace 路径到 localStorage
+      if (workspace) {
+        localStorage.setItem("arena_history_workspace", workspace.path);
+      }
+      await invoke("open_arena_statistics_window");
+    } catch (error) {
+      console.error("Failed to open arena statistics window:", error);
+    }
+  };
+
   return (
     <header className="h-12 border-b border-border flex items-center px-4 bg-card">
       <div className="flex items-center gap-4 flex-1">
@@ -215,6 +227,15 @@ export default function Header() {
           title={t("arena.history")}
         >
           <History className="w-4 h-4 text-muted-foreground" />
+        </button>
+
+        {/* Arena Statistics */}
+        <button
+          onClick={openArenaStatisticsWindow}
+          className="p-2 hover:bg-accent rounded-md transition-colors"
+          title={t("statistics.title")}
+        >
+          <BarChart3 className="w-4 h-4 text-muted-foreground" />
         </button>
 
         {/* Settings */}
