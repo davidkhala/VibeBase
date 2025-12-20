@@ -129,12 +129,12 @@ export default function HistoryPanel({ filePath }: HistoryPanelProps) {
                 <button
                   key={entry.id}
                   onClick={() => handleSelectHistory(entry)}
-                  className={`w-full px-4 py-3 text-left transition-colors ${isPreviewing
+                  className={`w-full px-3 py-1.5 text-left transition-colors ${isPreviewing
                     ? "bg-amber-500/10 border-l-2 border-amber-500"
                     : "hover:bg-accent/50"
                     }`}
                 >
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center justify-between mb-0.5">
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       {isPreviewing ? (
                         <Eye className="w-3 h-3 text-amber-500" />
@@ -147,11 +147,11 @@ export default function HistoryPanel({ filePath }: HistoryPanelProps) {
                       {entry.content_hash.substring(0, 8)}
                     </span>
                   </div>
-                  <p className="text-sm text-foreground line-clamp-2 break-all">
+                  <p className="text-xs text-foreground line-clamp-2 break-all leading-tight">
                     {entry.preview || t("history.empty_content", "(空内容)")}
                   </p>
                   {isPreviewing && (
-                    <span className="text-xs text-amber-600 mt-1 inline-block">
+                    <span className="text-xs text-amber-600 mt-0.5 inline-block">
                       {t("history.previewing", "正在预览")}
                     </span>
                   )}
