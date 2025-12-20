@@ -25,7 +25,9 @@
     "use": "使用",
     "delete": "删除",
     "rename": "重命名",
-    "clearSearch": "清除搜索"
+    "clearSearch": "清除搜索",
+    "minimize": "最小化",
+    "maximize": "最大化"
   },
   "rename": {
     "rename_file": "重命名文件",
@@ -336,6 +338,7 @@
     "noHistory": "暂无历史记录",
     "selectBattle": "选择一条记录查看详情",
     "models": "个模型",
+    "waitingResponse": "等待 Provider 响应...",
     "promptPreview": "Prompt 预览",
     "showMore": "展开",
     "showLess": "折叠",

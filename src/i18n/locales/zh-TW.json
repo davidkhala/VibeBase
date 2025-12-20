@@ -25,7 +25,9 @@
     "use": "使用",
     "delete": "刪除",
     "rename": "重新命名",
-    "clearSearch": "清除搜尋"
+    "clearSearch": "清除搜尋",
+    "minimize": "最小化",
+    "maximize": "最大化"
   },
   "rename": {
     "rename_file": "重新命名檔案",
@@ -336,6 +338,7 @@
     "noHistory": "暫無歷史記錄",
     "selectBattle": "選擇一條記錄查看詳情",
     "models": "個模型",
+    "waitingResponse": "等待 Provider 回應...",
     "promptPreview": "Prompt 預覽",
     "showMore": "展開",
     "showLess": "折疊",

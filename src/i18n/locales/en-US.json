@@ -25,7 +25,9 @@
     "use": "Use",
     "delete": "Delete",
     "rename": "Rename",
-    "clearSearch": "Clear Search"
+    "clearSearch": "Clear Search",
+    "minimize": "Minimize",
+    "maximize": "Maximize"
   },
   "rename": {
     "rename_file": "Rename File",
@@ -336,6 +338,7 @@
     "noHistory": "No history records",
     "selectBattle": "Select a record to view details",
     "models": "models",
+    "waitingResponse": "Waiting for Provider response...",
     "promptPreview": "Prompt Preview",
     "showMore": "Expand",
     "showLess": "Collapse",
