@@ -10,7 +10,10 @@ import {
   AlertCircle,
   Trash2,
   Plus,
-  RefreshCw
+  RefreshCw,
+  Copy,
+  Check,
+  ExternalLink
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -93,6 +96,7 @@ export default function WorkspaceManager() {
   const [loading, setLoading] = useState(true);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [selectedWorkspace, setSelectedWorkspace] = useState<{ path: string; name: string } | null>(null);
+  const [copiedPath, setCopiedPath] = useState<string | null>(null);
 
   const loadRecentProjects = async () => {
     try {
@@ -187,6 +191,30 @@ export default function WorkspaceManager() {
     });
   };
 
+  const getDbPath = (workspacePath: string): string => {
+    return `${workspacePath}/.vibebase/project.db`;
+  };
+
+  const handleCopyPath = async (workspacePath: string) => {
+    const dbPath = getDbPath(workspacePath);
+    try {
+      await navigator.clipboard.writeText(dbPath);
+      setCopiedPath(dbPath);
+      setTimeout(() => setCopiedPath(null), 2000);
+    } catch (error) {
+      console.error("Failed to copy path:", error);
+    }
+  };
+
+  const handleShowInFinder = async (workspacePath: string) => {
+    try {
+      const dbPath = getDbPath(workspacePath);
+      await invoke("show_in_folder", { path: dbPath });
+    } catch (error) {
+      console.error("Failed to show in finder:", error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -213,7 +241,7 @@ export default function WorkspaceManager() {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="flex-1 overflow-auto p-8 max-w-7xl mx-auto w-full">
       <div className="mb-6">
         <h3 className="text-xl font-semibold mb-2">{t("workspaceManager.title")}</h3>
         <p className="text-sm text-muted-foreground">
@@ -271,46 +299,86 @@ export default function WorkspaceManager() {
 
               {stats ? (
                 stats.has_database ? (
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
-                      <FileText className="w-5 h-5 text-blue-500" />
-                      <div>
-                        <div className="text-xs text-muted-foreground">{t("workspaceManager.stats.prompts")}</div>
-                        <div className="text-lg font-semibold">{stats.prompt_count}</div>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                      <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
+                        <FileText className="w-5 h-5 text-blue-500" />
+                        <div>
+                          <div className="text-xs text-muted-foreground">{t("workspaceManager.stats.prompts")}</div>
+                          <div className="text-lg font-semibold">{stats.prompt_count}</div>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
-                      <Tag className="w-5 h-5 text-green-500" />
-                      <div>
-                        <div className="text-xs text-muted-foreground">{t("workspaceManager.stats.tags")}</div>
-                        <div className="text-lg font-semibold">{stats.tag_count}</div>
+                      <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
+                        <Tag className="w-5 h-5 text-green-500" />
+                        <div>
+                          <div className="text-xs text-muted-foreground">{t("workspaceManager.stats.tags")}</div>
+                          <div className="text-lg font-semibold">{stats.tag_count}</div>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
-                      <Database className="w-5 h-5 text-purple-500" />
-                      <div>
-                        <div className="text-xs text-muted-foreground">{t("workspaceManager.stats.dbSize")}</div>
-                        <div className="text-lg font-semibold">
-                          {formatBytes(stats.db_size_bytes)}
+                      <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
+                        <Database className="w-5 h-5 text-purple-500" />
+                        <div>
+                          <div className="text-xs text-muted-foreground">{t("workspaceManager.stats.dbSize")}</div>
+                          <div className="text-lg font-semibold">
+                            {formatBytes(stats.db_size_bytes)}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
+                        <History className="w-5 h-5 text-orange-500" />
+                        <div>
+                          <div className="text-xs text-muted-foreground">{t("workspaceManager.stats.history")}</div>
+                          <div className="text-lg font-semibold">{stats.history_count}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
+                        <Zap className="w-5 h-5 text-yellow-500" />
+                        <div>
+                          <div className="text-xs text-muted-foreground">{t("workspaceManager.stats.executions")}</div>
+                          <div className="text-lg font-semibold">{stats.execution_count}</div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
-                      <History className="w-5 h-5 text-orange-500" />
-                      <div>
-                        <div className="text-xs text-muted-foreground">{t("workspaceManager.stats.history")}</div>
-                        <div className="text-lg font-semibold">{stats.history_count}</div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
-                      <Zap className="w-5 h-5 text-yellow-500" />
-                      <div>
-                        <div className="text-xs text-muted-foreground">{t("workspaceManager.stats.executions")}</div>
-                        <div className="text-lg font-semibold">{stats.execution_count}</div>
+                    {/* Database Location */}
+                    <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-lg border border-border/50">
+                      <Database className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium mb-1.5">{t("workspaceManager.dbLocation")}</div>
+                        <div className="flex items-center gap-2">
+                          <code className="text-xs bg-background/50 px-2 py-1 rounded border border-border flex-1 overflow-x-auto whitespace-nowrap">
+                            {getDbPath(project.path)}
+                          </code>
+                          <button
+                            onClick={() => handleCopyPath(project.path)}
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-md bg-secondary hover:bg-secondary/80 transition-colors flex-shrink-0"
+                            title={t("workspaceManager.copyPath")}
+                          >
+                            {copiedPath === getDbPath(project.path) ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-green-500" />
+                                <span className="text-green-500">{t("workspaceManager.pathCopied")}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5" />
+                                <span>{t("workspaceManager.copyPath")}</span>
+                              </>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleShowInFinder(project.path)}
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-md bg-secondary hover:bg-secondary/80 transition-colors flex-shrink-0"
+                            title={t("workspaceManager.showInFinder")}
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>{t("workspaceManager.showInFinder")}</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
