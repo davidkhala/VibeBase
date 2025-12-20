@@ -25,7 +25,11 @@ interface ArenaBattle {
 }
 
 interface ModelOutput {
-  model: string;
+  model_id?: string;
+  provider_name?: string;
+  model_name?: string;
+  provider_type?: string;
+  model?: string;  // 兼容旧数据
   output: string;
   metadata: {
     model: string;
@@ -210,7 +214,7 @@ export default function ArenaHistoryWindow({ onClose, isStandaloneWindow = false
                         {modelCount} {t("arena.models")}
                       </p>
                       <p className="text-xs text-muted-foreground truncate">
-                        {outputs.map(o => o.metadata.model).join(", ")}
+                        {outputs.map(o => o.model_name || o.metadata.model).join(", ")}
                       </p>
                     </button>
                   );
@@ -247,44 +251,63 @@ export default function ArenaHistoryWindow({ onClose, isStandaloneWindow = false
             )}
 
             {/* Results */}
-            <div className="flex-1 overflow-x-auto overflow-y-hidden">
-              <div className="flex gap-4 p-4 h-full">
-                {parseOutputs(selectedBattle.outputs).map((output) => {
-                  const isWinner = selectedBattle.winner_model === output.model;
-                  const votes = selectedBattle.votes ? JSON.parse(selectedBattle.votes) : {};
-                  const hasVoted = votes[output.model] === 1;
+            {(() => {
+              const outputs = parseOutputs(selectedBattle.outputs);
+              const modelCount = outputs.length;
+              const containerClasses = modelCount === 1
+                ? "flex-1 overflow-y-hidden"
+                : modelCount === 2
+                  ? "flex-1 overflow-y-hidden"
+                  : "flex-1 overflow-x-auto overflow-y-hidden";
 
-                  return (
-                    <VoteCard
-                      key={output.model}
-                      modelId={output.model}
-                      modelName={output.metadata.model}
-                      providerType={output.metadata.provider}
-                      output={output.output}
-                      metadata={output.metadata}
-                      hasVoted={hasVoted}
-                      isWinner={isWinner}
-                      isLoading={false}
-                      onVote={() => { }}
-                      onMarkWinner={() => { }}
-                      isReadOnly={true}
-                    />
-                  );
-                })}
-              </div>
-            </div>
+              const gridClasses = modelCount === 1
+                ? "h-full"
+                : modelCount === 2
+                  ? "grid grid-cols-2 gap-4 h-full"
+                  : "flex gap-4 h-full";
 
-            {/* Winner Display */}
-            {selectedBattle.winner_model && (
-              <div className="border-t border-border p-3 bg-yellow-500/5">
-                <div className="flex items-center justify-center gap-2">
-                  <Trophy className="w-4 h-4 text-yellow-600 dark:text-yellow-500" />
-                  <span className="text-sm font-medium">
-                    {t("arena.winner")}: {selectedBattle.winner_model}
-                  </span>
+              const cardWidthClass = modelCount === 1
+                ? "w-full"
+                : modelCount === 2
+                  ? "w-full"
+                  : "w-[400px] flex-shrink-0";
+
+              return (
+                <div className={containerClasses}>
+                  <div className={`${gridClasses} p-4`}>
+                    {outputs.map((output) => {
+                      const modelKey = output.model_id || output.model || "unknown";
+                      const modelName = output.model_name || output.metadata.model;
+                      const providerName = output.provider_name || output.metadata.provider;
+                      const providerType = output.provider_type || output.metadata.provider;
+
+                      // 使用 model_name 作为匹配 key
+                      const isWinner = selectedBattle.winner_model === modelName;
+                      const votes = selectedBattle.votes ? JSON.parse(selectedBattle.votes) : {};
+                      const hasVoted = votes[modelName] === 1;
+
+                      return (
+                        <VoteCard
+                          key={modelKey}
+                          modelId={modelKey}
+                          modelName={modelName}
+                          providerType={providerType}
+                          output={output.output}
+                          metadata={output.metadata}
+                          hasVoted={hasVoted}
+                          isWinner={isWinner}
+                          isLoading={false}
+                          cardWidth={cardWidthClass}
+                          onVote={() => { }}
+                          onMarkWinner={() => { }}
+                          isReadOnly={true}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center">
