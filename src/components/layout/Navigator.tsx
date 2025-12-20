@@ -7,6 +7,7 @@ import { useState, useRef } from "react";
 import NewPromptDialog from "../dialogs/NewPromptDialog";
 import NewFolderDialog from "../dialogs/NewFolderDialog";
 import DeleteConfirmDialog from "../dialogs/DeleteConfirmDialog";
+import RenameDialog from "../dialogs/RenameDialog";
 import FileTreeNode from "../filetree/FileTreeNode";
 import ContextMenu from "../filetree/ContextMenu";
 import { useDragDrop } from "../../hooks/useDragDrop";
@@ -23,6 +24,7 @@ export default function Navigator() {
   } | null>(null);
   const [selectedFolderPath, setSelectedFolderPath] = useState<string>("");
   const [deleteTarget, setDeleteTarget] = useState<FileNode | null>(null);
+  const [renameTarget, setRenameTarget] = useState<FileNode | null>(null);
   const { isDragging, draggedItem: draggedNode, handleMouseDown, handleMouseUp } = useDragDrop<FileNode>();
   const [dropTarget, setDropTarget] = useState<FileNode | null>(null);
   const [isRootDropZone, setIsRootDropZone] = useState(false);
@@ -240,6 +242,34 @@ export default function Navigator() {
     }
   };
 
+  const handleRename = () => {
+    if (!contextMenu) return;
+    setRenameTarget(contextMenu.node);
+    setContextMenu(null);
+  };
+
+  const handleConfirmRename = async (newName: string) => {
+    if (!renameTarget || !workspace) return;
+
+    try {
+      const newPath = await invoke<string>("rename_file", {
+        oldPath: renameTarget.path,
+        newName: newName,
+      });
+
+      // 如果重命名的是当前打开的文件，更新编辑器中的文件路径
+      if (currentFile === renameTarget.path) {
+        setCurrentFile(newPath);
+      }
+
+      // 刷新工作区
+      await handleRefresh();
+      setRenameTarget(null);
+    } catch (error) {
+      alert(`${t("rename.failed")}: ${error}`);
+    }
+  };
+
   const handleDelete = () => {
     if (!contextMenu) return;
     // 打开确认对话框
@@ -396,6 +426,7 @@ export default function Navigator() {
           onClose={() => setContextMenu(null)}
           onNewFile={handleNewFile}
           onNewFolder={handleNewFolder}
+          onRename={handleRename}
           onDelete={handleDelete}
         />
       )}
@@ -425,6 +456,17 @@ export default function Navigator() {
           itemType={deleteTarget.type}
           onConfirm={handleConfirmDelete}
           onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+
+      {/* Rename Dialog */}
+      {renameTarget && (
+        <RenameDialog
+          isOpen={true}
+          currentName={renameTarget.name}
+          itemType={renameTarget.type}
+          onConfirm={handleConfirmRename}
+          onCancel={() => setRenameTarget(null)}
         />
       )}
     </div>
