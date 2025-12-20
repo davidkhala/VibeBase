@@ -7,6 +7,7 @@ use std::sync::Mutex;
 use tauri::State;
 
 pub struct AppState {
+    #[allow(dead_code)]
     pub app_database: Mutex<AppDatabase>,
 }
 
