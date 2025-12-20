@@ -39,11 +39,6 @@ async function initializeApp() {
 // 启动应用
 initializeApp();
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
 
 
 
