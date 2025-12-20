@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Editor, { Monaco } from "@monaco-editor/react";
 import { useThemeStore } from "../../stores/themeStore";
 import { editor, languages } from "monaco-editor";
@@ -25,17 +25,49 @@ export default function MonacoEditor({
   const monacoRef = useRef<Monaco | null>(null);
   const decorationsRef = useRef<string[]>([]);
 
-  // Determine Monaco theme based on app theme
-  const getMonacoTheme = () => {
+  // 获取有效主题（解析 "system" 为实际的 light/dark）
+  const getEffectiveTheme = (): "light" | "dark" => {
     if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light";
-      return systemTheme === "dark" ? "vs-dark" : "vs";
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     }
-    return theme === "dark" ? "vs-dark" : "vs";
+    return theme as "light" | "dark";
   };
+
+  // 使用 state 存储当前有效主题，确保响应式更新
+  const [effectiveTheme, setEffectiveTheme] = useState<"light" | "dark">(getEffectiveTheme);
+
+  // Determine Monaco theme based on effective theme
+  const getMonacoTheme = () => {
+    return effectiveTheme === "dark" ? "vs-dark" : "vs";
+  };
+
+  // 监听主题变化，更新有效主题状态
+  useEffect(() => {
+    const newEffectiveTheme = getEffectiveTheme();
+    setEffectiveTheme(newEffectiveTheme);
+  }, [theme]);
+
+  // 监听系统主题变化（当应用主题设置为 "system" 时）
+  useEffect(() => {
+    if (theme !== "system") return;
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleSystemThemeChange = () => {
+      const newEffectiveTheme = getEffectiveTheme();
+      setEffectiveTheme(newEffectiveTheme);
+    };
+
+    mediaQuery.addEventListener("change", handleSystemThemeChange);
+    return () => mediaQuery.removeEventListener("change", handleSystemThemeChange);
+  }, [theme]);
+
+  // 当有效主题改变时，更新 Monaco 编辑器
+  useEffect(() => {
+    if (editorRef.current && monacoRef.current) {
+      const monacoTheme = getMonacoTheme();
+      editorRef.current.updateOptions({ theme: monacoTheme });
+    }
+  }, [effectiveTheme]);
 
   useEffect(() => {
     if (editorRef.current && monacoRef.current) {
@@ -81,6 +113,10 @@ export default function MonacoEditor({
       ],
       colors: {},
     });
+
+    // 立即应用正确的主题（修复首次加载时主题不同步的问题）
+    const monacoTheme = getMonacoTheme();
+    editor.updateOptions({ theme: monacoTheme });
 
     // Register completion provider for global variables (only once globally)
     if (!completionProviderRegistered) {
@@ -235,11 +271,11 @@ export default function MonacoEditor({
     <div className="h-full">
       <style>{`
         .variable-highlight {
-          background-color: ${theme === "dark" ? "rgba(167, 139, 250, 0.2)" : "rgba(139, 92, 246, 0.15)"
-          };
+          background-color: ${effectiveTheme === "dark" ? "rgba(167, 139, 250, 0.2)" : "rgba(139, 92, 246, 0.15)"
+        };
           border-radius: 3px;
           font-weight: 600;
-          color: ${theme === "dark" ? "#a78bfa" : "#8b5cf6"};
+          color: ${effectiveTheme === "dark" ? "#a78bfa" : "#8b5cf6"};
         }
       `}</style>
       <Editor
