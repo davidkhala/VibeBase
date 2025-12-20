@@ -1,12 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { useThemeStore } from "../../stores/themeStore";
 import { useWorkspaceStore, Workspace } from "../../stores/workspaceStore";
-import { Moon, Sun, Monitor, FolderOpen, Languages, Settings as SettingsIcon, Layers, ChevronDown } from "lucide-react";
+import { Moon, Sun, Monitor, FolderOpen, Languages, Settings as SettingsIcon, Layers, ChevronDown, History } from "lucide-react";
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { open } from "@tauri-apps/api/dialog";
-import { useConfigStore, WorkspaceConfig } from "../../stores/configStore";
-import EnvironmentSelector from "../environment/EnvironmentSelector";
 
 interface RecentProject {
   id: string;
@@ -20,31 +18,14 @@ export default function Header() {
   const { t, i18n } = useTranslation();
   const { theme, setTheme } = useThemeStore();
   const { workspace, setWorkspace } = useWorkspaceStore();
-  const { setConfig } = useConfigStore();
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false);
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>([]);
 
   useEffect(() => {
-    if (workspace) {
-      loadConfig();
-    }
     loadRecentProjects();
   }, [workspace]);
-
-  const loadConfig = async () => {
-    if (!workspace) return;
-
-    try {
-      const config = await invoke<WorkspaceConfig>("read_config", {
-        workspacePath: workspace.path,
-      });
-      setConfig(config);
-    } catch (error) {
-      console.error("Failed to load config:", error);
-    }
-  };
 
   const loadRecentProjects = async () => {
     try {
@@ -136,6 +117,18 @@ export default function Header() {
     }
   };
 
+  const openArenaHistoryWindow = async () => {
+    try {
+      // 保存当前 workspace 路径到 localStorage
+      if (workspace) {
+        localStorage.setItem("arena_history_workspace", workspace.path);
+      }
+      await invoke("open_arena_history_window");
+    } catch (error) {
+      console.error("Failed to open arena history window:", error);
+    }
+  };
+
   return (
     <header className="h-12 border-b border-border flex items-center px-4 bg-card">
       <div className="flex items-center gap-4 flex-1">
@@ -189,32 +182,40 @@ export default function Header() {
             )}
           </div>
         ) : (
-        <div className="flex items-center gap-2">
-          <FolderOpen className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm font-medium text-foreground">
+          <div className="flex items-center gap-2">
+            <FolderOpen className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">
               {t("workspace.noWorkspace")}
-          </span>
-        </div>
+            </span>
+          </div>
         )}
         {workspace && (
           <>
             <span className="text-xs text-muted-foreground">
               {t("workspace.promptsFound", { count: workspace.prompts.length })}
             </span>
-            <EnvironmentSelector />
           </>
         )}
       </div>
 
       <div className="flex items-center gap-2">
         {/* Variables Manager */}
-          <button
+        <button
           onClick={openVariablesWindow}
-            className="p-2 hover:bg-accent rounded-md transition-colors"
-            title="Manage Global Variables"
-          >
-            <Layers className="w-4 h-4 text-muted-foreground" />
-          </button>
+          className="p-2 hover:bg-accent rounded-md transition-colors"
+          title="Manage Global Variables"
+        >
+          <Layers className="w-4 h-4 text-muted-foreground" />
+        </button>
+
+        {/* Arena History */}
+        <button
+          onClick={openArenaHistoryWindow}
+          className="p-2 hover:bg-accent rounded-md transition-colors"
+          title={t("arena.history")}
+        >
+          <History className="w-4 h-4 text-muted-foreground" />
+        </button>
 
         {/* Settings */}
         <button
@@ -227,14 +228,14 @@ export default function Header() {
 
         {/* Language Switcher */}
         <div className="relative">
-        <button
+          <button
             onClick={() => setShowLanguageMenu(!showLanguageMenu)}
             className="p-2 hover:bg-accent rounded-md transition-colors flex items-center gap-1"
             title={t(`language.${i18n.language}`)}
-        >
-          <Languages className="w-4 h-4 text-muted-foreground" />
+          >
+            <Languages className="w-4 h-4 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">{getCurrentLanguageDisplay()}</span>
-        </button>
+          </button>
 
           {showLanguageMenu && (
             <>
