@@ -264,132 +264,8 @@ export default function ExecutionPanel({
       return;
     }
 
-    // 如果选择了多个模型，打开 Arena 窗口
-    if (selectedModels.size >= 2) {
-      handleOpenArena();
-      return;
-    }
-
-    // 单模型执行：在当前面板显示结果
-    setIsExecuting(true);
-    setError(null);
-    setResults(new Map());
-
-    try {
-      const newResults = new Map<string, ExecutionResult>();
-      const modelArray = Array.from(selectedModels);
-
-      if (arenaSettings.concurrent_execution) {
-        // 并发执行（批量执行，受 max_concurrent 限制）
-        const chunks = [];
-        for (let i = 0; i < modelArray.length; i += arenaSettings.max_concurrent) {
-          chunks.push(modelArray.slice(i, i + arenaSettings.max_concurrent));
-        }
-
-        for (const chunk of chunks) {
-          const promises = chunk.map(async (modelId) => {
-            const model = enabledModels.find(m => m.id === modelId);
-            if (!model) return null;
-
-            const provider = providers.find(p => p.name === model.provider_name);
-            if (!provider) return null;
-
-            try {
-              // 获取 API Key
-              let apiKey = "";
-              if (provider.api_key_source === "keychain" && provider.api_key_ref) {
-                apiKey = await invoke<string>("get_api_key_from_keychain", {
-                  environment: provider.api_key_ref,
-                });
-              } else if (provider.api_key_source === "env_var" && provider.api_key_ref) {
-                apiKey = provider.api_key_ref;
-              } else if (provider.api_key) {
-                apiKey = provider.api_key;
-              }
-
-              const modifiedPromptYaml = promptContent.replace(
-                /model:\s*.*/,
-                `model: ${model.model_id}`
-              );
-
-              const result = await invoke<ExecutionResult>("execute_prompt", {
-                promptYaml: modifiedPromptYaml,
-                variables: variableValues,
-                apiKey: apiKey,
-                baseUrl: provider.base_url || null,
-              });
-
-              return { modelId, result };
-            } catch (err) {
-              console.error(`Failed to execute with ${model.model_name}:`, err);
-              return null;
-            }
-          });
-
-          const chunkResults = await Promise.all(promises);
-          chunkResults.forEach((item) => {
-            if (item) {
-              newResults.set(item.modelId, item.result);
-            }
-          });
-        }
-      } else {
-        // 串行执行
-        for (const modelId of modelArray) {
-          const model = enabledModels.find(m => m.id === modelId);
-          if (!model) continue;
-
-          const provider = providers.find(p => p.name === model.provider_name);
-          if (!provider) continue;
-
-          try {
-            // 获取 API Key
-            let apiKey = "";
-            if (provider.api_key_source === "keychain" && provider.api_key_ref) {
-              apiKey = await invoke<string>("get_api_key_from_keychain", {
-                environment: provider.api_key_ref,
-              });
-            } else if (provider.api_key_source === "env_var" && provider.api_key_ref) {
-              apiKey = provider.api_key_ref;
-            } else if (provider.api_key) {
-              apiKey = provider.api_key;
-            }
-
-            const modifiedPromptYaml = promptContent.replace(
-              /model:\s*.*/,
-              `model: ${model.model_id}`
-            );
-
-            const result = await invoke<ExecutionResult>("execute_prompt", {
-              promptYaml: modifiedPromptYaml,
-              variables: variableValues,
-              apiKey: apiKey,
-              baseUrl: provider.base_url || null,
-            });
-
-            newResults.set(modelId, result);
-          } catch (err) {
-            console.error(`Failed to execute with ${model.model_name}:`, err);
-            // 继续执行其他模型
-          }
-        }
-      }
-
-      if (newResults.size === 0) {
-        throw new Error(t("execution.all_models_failed"));
-      }
-
-      setResults(newResults);
-
-      // 自动保存结果到数据库（如果启用）
-      if (arenaSettings.auto_save_results && newResults.size > 0) {
-        saveArenaBattle(newResults);
-      }
-    } catch (err) {
-      setError(String(err));
-    } finally {
-      setIsExecuting(false);
-    }
+    // 所有执行都通过 Arena 窗口
+    handleOpenArena();
   };
 
   const handleOpenArena = async () => {
@@ -407,7 +283,7 @@ export default function ExecutionPanel({
     const arenaContext = {
       variables,
       variableValues,
-      filePath: currentFile,  // 使用文件路径而不是内容
+      filePath: currentFile,
       fileName: currentFile.split('/').pop(),
       workspacePath: workspace.path,
       selectedModels: Array.from(selectedModels),
