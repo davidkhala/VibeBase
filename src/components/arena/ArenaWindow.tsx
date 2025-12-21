@@ -243,7 +243,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
 
               console.log(`[Arena] Final config:`, JSON.stringify(runtime.config));
 
-              // 确定正确的 base_url
+              // Determine correct base_url
               let baseUrl = fullProvider.base_url || null;
               if (!baseUrl && fullProvider.provider === "openrouter") {
                 baseUrl = "https://openrouter.ai/api/v1";
