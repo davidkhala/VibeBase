@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { useTranslation } from "react-i18next";
-import { X, Plus, Trash2, HelpCircle, Minus, Square, Maximize2, Search } from "lucide-react";
+import { X, Plus, Trash2, HelpCircle, Search } from "lucide-react";
 import { appWindow } from "@tauri-apps/api/window";
 
 interface GlobalVariable {
