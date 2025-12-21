@@ -16,7 +16,7 @@ function App() {
   }, [initTheme]);
 
   useEffect(() => {
-    // 跳过首次渲染，因为 index.html 和 main.tsx 已经处理了初始主题
+    // Skip first render as index.html and main.tsx already handled initial theme
     if (isFirstRender.current) {
       isFirstRender.current = false;
       console.log("⏭️ Skipping first render theme update (already handled by main.tsx)");
@@ -31,19 +31,19 @@ function App() {
 
       let effectiveTheme: string;
       if (theme === "system") {
-        // 🔥 首先同步应用 matchMedia 检测的主题，避免闪烁
+        // First apply matchMedia detected theme synchronously to avoid flicker
         const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
         const immediateTheme = isDark ? "dark" : "light";
         root.classList.add(immediateTheme);
         console.log("⚡ Immediately applied theme:", immediateTheme);
 
-        // 然后尝试从 Rust API 获取更准确的系统主题
+        // Then try to get more accurate system theme from Rust API
         try {
           console.log("🔍 Fetching real system theme from Rust...");
           effectiveTheme = await invoke<string>("get_system_theme");
           console.log("✅ Got system theme from Rust:", effectiveTheme);
 
-          // 如果 Rust 返回的主题与立即应用的不同，更新它
+          // If Rust returns different theme than immediate one, update it
           if (effectiveTheme !== immediateTheme) {
             root.classList.remove("light", "dark");
             root.classList.add(effectiveTheme);
@@ -51,7 +51,7 @@ function App() {
           }
         } catch (error) {
           console.error("❌ Failed to get system theme from Rust:", error);
-          // 使用已经应用的 matchMedia 结果
+          // Use the already applied matchMedia result
           effectiveTheme = immediateTheme;
           console.log("⚠️ Using fallback matchMedia:", effectiveTheme);
         }
