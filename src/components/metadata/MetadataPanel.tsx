@@ -36,7 +36,7 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // 存储待保存的数据快照
+  // Store pending save data snapshot
   const pendingSaveDataRef = useRef<{
     workspacePath: string;
     filePath: string;
@@ -47,27 +47,27 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
     tags: string[];
     testDataPath: string;
   } | null>(null);
-  // 使用 ref 来控制是否允许保存（同步更新，避免 React 状态延迟问题）
+  // Use ref to control whether saving is allowed (synchronous update, avoid React state delay issues)
   const canSaveRef = useRef<boolean>(false);
-  // 当前文件路径的 ref
+  // Ref for current file path
   const currentFilePathRef = useRef<string>(filePath);
 
-  // 组件挂载时和 filePath 变化时加载数据
+  // Load data when component mounts and when filePath changes
   useEffect(() => {
 
-    // 立即禁止保存（同步）
+    // Immediately disable saving (synchronous)
     canSaveRef.current = false;
     currentFilePathRef.current = filePath;
 
-    // 立即清除之前的定时器
+    // Immediately clear previous timer
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = null;
     }
 
-    // 在切换文件前，先保存上一个文件的数据
+    // Before switching files, save previous file's data first
     const saveAndLoad = async () => {
-      // 如果有待保存的数据，且文件路径不同，先保存
+      // If there's pending data and file path is different, save first
       const pendingData = pendingSaveDataRef.current;
       if (pendingData && pendingData.filePath !== filePath) {
         const parameters: Record<string, number> = {};
@@ -94,10 +94,10 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
         }
       }
 
-      // 清空 pending 数据
+      // Clear pending data
       pendingSaveDataRef.current = null;
 
-      // 加载新文件
+      // Load new file
       await loadMetadata();
       loadProviders();
     };
@@ -105,14 +105,14 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
     saveAndLoad();
   }, [filePath, workspace?.path]);
 
-  // 自动保存 - 当表单数据变化时
+  // Auto-save - when form data changes
   useEffect(() => {
-    // 使用 ref 检查是否允许保存（同步检查）
+    // Use ref to check if saving is allowed (synchronous check)
     if (!canSaveRef.current || !workspace?.path) return;
 
     const savedFilePath = currentFilePathRef.current;
 
-    // 存储当前数据快照（用于切换文件时保存）
+    // Store current data snapshot (for saving when switching files)
     pendingSaveDataRef.current = {
       workspacePath: workspace.path,
       filePath: savedFilePath,
@@ -124,14 +124,14 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
       testDataPath,
     };
 
-    // 清除之前的定时器
+    // Clear previous timer
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // 延迟 500ms 后自动保存
+    // Auto-save after 500ms delay
     saveTimeoutRef.current = setTimeout(async () => {
-      // 再次检查是否允许保存，以及文件是否匹配
+      // Check again if saving is allowed and if file matches
       if (!canSaveRef.current || currentFilePathRef.current !== savedFilePath) {
         console.log("Skip auto-save: not allowed or file changed");
         return;
@@ -160,7 +160,7 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
         });
 
         console.log("Metadata auto-saved:", metadataUpdate);
-        // 保存成功后清空 pending
+        // Clear pending after successful save
         if (pendingSaveDataRef.current?.filePath === savedFilePath) {
           pendingSaveDataRef.current = null;
         }
@@ -200,7 +200,7 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
       setTestDataPath("");
     } finally {
       setLoading(false);
-      // 使用 setTimeout 确保 React 状态更新已完成，然后允许自动保存
+      // Use setTimeout to ensure React state update is complete, then allow auto-save
       setTimeout(() => {
         if (currentFilePathRef.current === filePath) {
           canSaveRef.current = true;
