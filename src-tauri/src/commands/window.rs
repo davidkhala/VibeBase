@@ -27,7 +27,7 @@ pub fn open_variables_window(window: Window) -> Result<(), String> {
         "variables",
         window_url
     )
-    .title("全局变量")
+    .title("Global Variables")
     .inner_size(800.0, 700.0)
     .min_inner_size(600.0, 500.0)
     .resizable(true)
@@ -61,7 +61,7 @@ pub fn open_settings_window(window: Window) -> Result<(), String> {
         "settings",
         window_url
     )
-    .title("设置")
+    .title("Settings")
     .inner_size(1200.0, 800.0)
     .min_inner_size(1000.0, 600.0)
     .resizable(true)
