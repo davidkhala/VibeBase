@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useDragDrop } from "../../hooks/useDragDrop";
 
 /**
- * 最简单的拖拽测试 - 使用鼠标事件（Tauri webview 不支持 HTML5 拖放）
+ * Simplest drag test - using mouse events (Tauri webview doesn't support HTML5 drag and drop)
  */
 export default function SimpleDragTest() {
   const { isDragging, draggedItem, handleMouseDown, handleMouseUp } = useDragDrop<string>();
@@ -14,13 +14,13 @@ export default function SimpleDragTest() {
       style={{ padding: "50px", backgroundColor: "#f0f0f0", minHeight: "100vh" }}
       onMouseUp={handleMouseUp}
     >
-      <h1>拖拽测试 - 鼠标事件方案</h1>
+      <h1>Drag Test - Mouse Event Solution</h1>
 
       <div style={{ marginBottom: "20px", padding: "10px", backgroundColor: isDragging ? "#ffffcc" : "#fff", border: "2px solid #ccc" }}>
-        <strong>状态:</strong> {isDragging ? `正在拖拽 ${draggedItem}` : '未拖拽'}
+        <strong>Status:</strong> {isDragging ? `Dragging ${draggedItem}` : 'Not dragging'}
       </div>
 
-      <h2>可拖拽项目：</h2>
+      <h2>Draggable Items:</h2>
       {['文件1.vibe.md', '文件2.vibe.md', '文件夹A'].map((item) => (
         <div
           key={item}
@@ -40,14 +40,14 @@ export default function SimpleDragTest() {
         </div>
       ))}
 
-      <h2>拖放目标：</h2>
+      <h2>Drop Target:</h2>
       <div
         onMouseEnter={() => setDropZoneHover(true)}
         onMouseLeave={() => setDropZoneHover(false)}
         onMouseUp={() => {
           if (isDragging && draggedItem) {
-            setResult(`✅ 成功：将 ${draggedItem} 拖放到目标区域`);
-            console.log('✅ 拖放成功:', draggedItem);
+            setResult(`✅ Success: Dropped ${draggedItem} into target area`);
+            console.log('✅ Drop successful:', draggedItem);
           }
         }}
         style={{
@@ -86,3 +86,4 @@ export default function SimpleDragTest() {
     </div>
   );
 }
+
