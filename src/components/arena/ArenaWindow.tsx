@@ -267,10 +267,10 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
                 return newMap;
               });
 
-              // 开始流式显示输出
+              // Start streaming output display
               animateOutput(modelId, result.output);
 
-              // 移除加载状态（放在最后，确保 results 已更新）
+              // Remove loading state (placed last to ensure results are updated)
               setLoadingModels(prev => {
                 const newSet = new Set(prev);
                 newSet.delete(modelId);
