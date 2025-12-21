@@ -120,11 +120,11 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
         }
       }
 
-      // 加载 Arena 设置
+      // Load Arena settings
       const settings = await invoke<ArenaSettings>("get_arena_settings");
       setArenaSettings(settings);
 
-      // 加载模型和 providers
+      // Load models and providers
       const modelsList = await invoke<EnabledModel[]>("list_enabled_models");
       setEnabledModels(modelsList);
 
