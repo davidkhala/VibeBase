@@ -51,9 +51,3 @@ export default {
   },
   plugins: [],
 }
-
-
-
-
-
-
