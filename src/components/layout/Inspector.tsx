@@ -81,7 +81,7 @@ export default function Inspector() {
         ) : (
           <div className="flex items-center justify-center h-full p-4">
             <p className="text-sm text-muted-foreground text-center">
-              打开文件以查看变量和选项
+              Open a file to view variables and options
             </p>
           </div>
         )}
