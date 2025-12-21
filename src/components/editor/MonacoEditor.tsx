@@ -157,7 +157,7 @@ export default function MonacoEditor({
     highlightVariables(editor, monaco);
   };
 
-  const registerVariableCompletionProvider = (monaco: Monaco, lang: string) => {
+  const registerVariableCompletionProvider = (monaco: Monaco, _lang: string) => {
     // Register for both yaml and markdown
     const languages = ["yaml", "markdown"];
 
@@ -171,7 +171,7 @@ export default function MonacoEditor({
           "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
           "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
         ],
-        provideCompletionItems: async (model, position) => {
+        provideCompletionItems: async (model: any, position: any) => {
           const lineContent = model.getLineContent(position.lineNumber);
           const textBeforeCursor = lineContent.substring(0, position.column - 1);
           const textAfterCursor = lineContent.substring(position.column - 1);
@@ -301,7 +301,7 @@ export default function MonacoEditor({
           acceptSuggestionOnCommitCharacter: true,
           acceptSuggestionOnEnter: "on",
           // Disable all default auto-completion
-          wordBasedSuggestions: false,
+          wordBasedSuggestions: "off",
           // Disable code snippets
           snippetSuggestions: "none",
           // Use Ctrl+Space for manual suggestion trigger
