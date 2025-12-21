@@ -53,7 +53,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
   const [modelSearchQuery, setModelSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(true);
-  const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
+  const [_saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Selected provider details
@@ -61,7 +61,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
   const [showApiKey, setShowApiKey] = useState(false);
   const [providerEnabled, setProviderEnabled] = useState(false);
   const [models, setModels] = useState<ProviderModel[]>([]);
-  const [savedEnabledModels, setSavedEnabledModels] = useState<string[]>([]);
+  const [_savedEnabledModels, setSavedEnabledModels] = useState<string[]>([]);
   const [fetchingModels, setFetchingModels] = useState(false);
 
   // Model selection dialog state
@@ -223,15 +223,6 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
     } catch (error) {
       console.error("Failed to load provider details:", error);
     }
-  };
-
-  const loadProviderDetails = async (providerName: string) => {
-    loadProviderDetailsWithData(providerName, providers);
-  };
-
-  const loadDefaultModels = (providerName: string) => {
-    // No default models - require user to fetch
-    setModels([]);
   };
 
   const handleProviderSelect = (providerName: string) => {
