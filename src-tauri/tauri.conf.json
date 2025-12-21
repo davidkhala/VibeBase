@@ -67,6 +67,14 @@
     "security": {
       "csp": null
     },
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://github.com/Geoion/VibeBase/releases/latest/download/latest.json"
+      ],
+      "dialog": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDg0MTYzNEQyNjM4NzZDOTEKUldTUmJJZGowalFXaEorVVhYY0MvS3B6VHFVQXAwTEJkM3Zvb1RMMHRaNGNaT1hiVkVNTWxjSHMK"
+    },
     "windows": [
       {
         "fullscreen": false,
