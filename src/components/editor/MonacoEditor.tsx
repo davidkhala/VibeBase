@@ -210,8 +210,8 @@ export default function MonacoEditor({
             const suggestions: languages.CompletionItem[] = filteredVariables.map((variable) => ({
               label: variable.key,
               kind: monaco.languages.CompletionItemKind.Variable,
-              detail: `默认值: ${variable.value}`,
-              documentation: `全局变量: ${variable.key}\n默认值: ${variable.value}`,
+              detail: `Default value: ${variable.value}`,
+              documentation: `Global variable: ${variable.key}\nDefault value: ${variable.value}`,
               insertText: hasClosingBraces ? variable.key : `${variable.key}}}`,
               filterText: variable.key,
               sortText: variable.key,
@@ -263,7 +263,7 @@ export default function MonacoEditor({
       });
     }
 
-    // 清除旧的装饰器并应用新的
+    // Clear old decorations and apply new ones
     decorationsRef.current = model.deltaDecorations(decorationsRef.current, decorations);
   };
 
@@ -294,17 +294,17 @@ export default function MonacoEditor({
           automaticLayout: true,
           tabSize: 2,
           wordWrap: "on",
-          // 完全禁用自动触发的建议，只通过触发字符显示
+          // Completely disable auto-triggered suggestions, only show via trigger characters
           quickSuggestions: false,
-          // 只在触发字符时显示建议
+          // Only show suggestions on trigger characters
           suggestOnTriggerCharacters: true,
           acceptSuggestionOnCommitCharacter: true,
           acceptSuggestionOnEnter: "on",
-          // 禁用所有默认的自动补全
+          // Disable all default auto-completion
           wordBasedSuggestions: false,
-          // 禁用代码片段
+          // Disable code snippets
           snippetSuggestions: "none",
-          // 手动触发建议时使用 Ctrl+Space
+          // Use Ctrl+Space for manual suggestion trigger
           suggest: {
             showWords: false,
             showSnippets: false,
