@@ -1,39 +1,39 @@
 import { useState } from "react";
 
 /**
- * 最简单的拖拽测试组件
- * 用于验证浏览器拖拽功能是否正常
+ * Simplest drag test component
+ * Used to verify if browser drag functionality works properly
  */
 export default function DragTest() {
-  const [message, setMessage] = useState("等待拖拽...");
+  const [message, setMessage] = useState("Waiting for drag...");
 
   const handleDragStart = (e: React.DragEvent) => {
-    console.log("✅ 测试组件：拖拽开始");
-    setMessage("拖拽中...");
+    console.log("✅ Test component: Drag started");
+    setMessage("Dragging...");
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", "test");
   };
 
   const handleDragEnd = () => {
-    console.log("✅ 测试组件：拖拽结束");
-    setMessage("拖拽结束");
+    console.log("✅ Test component: Drag ended");
+    setMessage("Drag ended");
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    console.log("✅ 测试组件：拖拽经过目标");
+    console.log("✅ Test component: Drag over target");
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    console.log("✅ 测试组件：拖放完成");
-    setMessage("拖放成功！");
+    console.log("✅ Test component: Drop complete");
+    setMessage("Drop successful!");
   };
 
   return (
     <div style={{ padding: "20px", border: "2px solid #666" }}>
-      <h3>拖拽功能测试</h3>
-      <p>状态: {message}</p>
+      <h3>Drag Test</h3>
+      <p>Status: {message}</p>
 
       <div
         draggable={true}
@@ -49,7 +49,7 @@ export default function DragTest() {
           userSelect: "none",
         }}
       >
-        拖动我
+        Drag me
       </div>
 
       <div
@@ -64,19 +64,20 @@ export default function DragTest() {
           backgroundColor: "#f0f0f0",
         }}
       >
-        拖放到这里
+        Drop here
       </div>
 
       <button
         onClick={() => {
-          console.log("检查元素:");
-          console.log("可拖拽元素数量:", document.querySelectorAll('[draggable="true"]').length);
+          console.log("Check elements:");
+          console.log("Draggable elements count:", document.querySelectorAll('[draggable="true"]').length);
         }}
         style={{ padding: "10px", marginTop: "10px" }}
       >
-        检查拖拽元素
+        Check Draggable Elements
       </button>
     </div>
   );
 }
+
 
