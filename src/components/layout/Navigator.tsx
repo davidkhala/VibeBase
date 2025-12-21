@@ -30,7 +30,7 @@ export default function Navigator() {
   const [dropTarget, setDropTarget] = useState<FileNode | null>(null);
   const [isRootDropZone, setIsRootDropZone] = useState(false);
 
-  // 保存文件历史记录
+  // Save file history
   const saveHistory = async (filePath: string, fileContent: string) => {
     if (!workspace?.path) return;
 
@@ -46,10 +46,10 @@ export default function Navigator() {
   };
 
   const handleFileClick = async (filePath: string) => {
-    // 获取当前 store 状态
+    // Get current store state
     const { currentFile: prevFile, content: prevContent, isDirty: prevDirty } = useEditorStore.getState();
 
-    // 如果当前有打开的文件且内容有变化，先保存历史
+    // If current file is open and modified, save history first
     if (prevFile && prevDirty && workspace?.path) {
       await saveHistory(prevFile, prevContent);
     }
@@ -109,7 +109,7 @@ export default function Navigator() {
     });
   };
 
-  // 获取文件路径的父目录
+  // Get parent directory of a file path
   const getParentDirectory = (filePath: string): string => {
     const lastSlashIndex = filePath.lastIndexOf('/');
     if (lastSlashIndex === -1) return filePath;
@@ -120,14 +120,14 @@ export default function Navigator() {
     if (folderPath) {
       setSelectedFolderPath(folderPath);
     } else if (contextMenu?.node) {
-      // 如果右键点击的是文件夹，使用文件夹路径；如果是文件，使用其父目录
+      // If right-clicked on folder, use folder path; if file, use its parent directory
       if (contextMenu.node.type === "folder") {
         setSelectedFolderPath(contextMenu.node.path);
       } else {
         setSelectedFolderPath(getParentDirectory(contextMenu.node.path));
       }
     } else if (currentFile) {
-      // 如果有当前选中的文件，使用其父目录
+      // If there's a selected file, use its parent directory
       setSelectedFolderPath(getParentDirectory(currentFile));
     } else if (workspace) {
       setSelectedFolderPath(workspace.path);
@@ -139,14 +139,14 @@ export default function Navigator() {
     if (folderPath) {
       setSelectedFolderPath(folderPath);
     } else if (contextMenu?.node) {
-      // 如果右键点击的是文件夹，使用文件夹路径；如果是文件，使用其父目录
+      // If right-clicked on folder, use folder path; if file, use its parent directory
       if (contextMenu.node.type === "folder") {
         setSelectedFolderPath(contextMenu.node.path);
       } else {
         setSelectedFolderPath(getParentDirectory(contextMenu.node.path));
       }
     } else if (currentFile) {
-      // 如果有当前选中的文件，使用其父目录
+      // If there's a selected file, use its parent directory
       setSelectedFolderPath(getParentDirectory(currentFile));
     } else if (workspace) {
       setSelectedFolderPath(workspace.path);
@@ -162,35 +162,35 @@ export default function Navigator() {
       });
     } catch (error) {
       console.error("Failed to show message:", error);
-      // 降级到 alert
+      // Fallback to alert
       alert(t("common.featureComingSoon"));
     }
   };
 
-  // 处理拖拽移动到文件夹
+  // Handle drag and move to folder
   const handleDragMove = async (targetNode: FileNode) => {
     if (!workspace || !draggedNode || !isDragging) return;
 
-    console.log("📦 拖放:", draggedNode.name, "->", targetNode.name);
+    console.log("📦 Drop:", draggedNode.name, "->", targetNode.name);
 
-    // 防止拖到自己
+    // Prevent dragging to itself
     if (draggedNode.path === targetNode.path) return;
 
-    // 防止文件夹拖到自己的子文件夹
+    // Prevent dragging folder to its own subfolder
     if (draggedNode.type === "folder" && targetNode.path.startsWith(draggedNode.path + '/')) {
-      alert('不能将文件夹移动到自己的子文件夹中');
+      alert('Cannot move folder into its own subfolder');
       return;
     }
 
-    // 检查是否已在目标目录
+    // Check if already in target directory
     const sourceParent = draggedNode.path.substring(0, draggedNode.path.lastIndexOf('/'));
     if (sourceParent === targetNode.path) return;
 
-    // 检查重名
+    // Check for name conflict
     if (targetNode.type === "folder") {
       const hasConflict = targetNode.children.some(child => child.name === draggedNode.name);
       if (hasConflict) {
-        alert(`目标目录中已存在: ${draggedNode.name}`);
+        alert(`Already exists in target directory: ${draggedNode.name}`);
         return;
       }
     }
@@ -201,35 +201,35 @@ export default function Navigator() {
         destDir: targetNode.path,
       });
 
-      console.log("✅ 移动成功:", newPath);
+      console.log("✅ Move successful:", newPath);
       await handleRefresh();
 
       if (currentFile === draggedNode.path) {
         setCurrentFile(newPath);
       }
     } catch (error) {
-      console.error("移动失败:", error);
-      alert(`移动失败: ${error}`);
+      console.error("Move failed:", error);
+      alert(`Move failed: ${error}`);
     }
   };
 
-  // 处理拖拽移动到根目录
+  // Handle drag and move to root directory
   const handleDragMoveToRoot = async () => {
     if (!workspace || !draggedNode) return;
 
-    console.log("📦 拖放到根目录:", draggedNode.name);
+    console.log("📦 Drop to root:", draggedNode.name);
 
-    // 检查是否已在根目录
+    // Check if already in root directory
     const sourceParent = draggedNode.path.substring(0, draggedNode.path.lastIndexOf('/'));
     if (sourceParent === workspace.path) {
-      console.log("已在根目录，无需移动");
+      console.log("Already in root directory, no need to move");
       return;
     }
 
-    // 检查根目录重名
+    // Check for name conflict in root
     const rootHasChild = workspace.file_tree.children.some(child => child.name === draggedNode.name);
     if (rootHasChild) {
-      alert(`根目录中已存在: ${draggedNode.name}`);
+      alert(`Already exists in root directory: ${draggedNode.name}`);
       return;
     }
 
@@ -239,15 +239,15 @@ export default function Navigator() {
         destDir: workspace.path,
       });
 
-      console.log("✅ 移动到根目录成功:", newPath);
+      console.log("✅ Move to root successful:", newPath);
       await handleRefresh();
 
       if (currentFile === draggedNode.path) {
         setCurrentFile(newPath);
       }
     } catch (error) {
-      console.error("移动到根目录失败:", error);
-      alert(`移动失败: ${error}`);
+      console.error("Move to root failed:", error);
+      alert(`Move failed: ${error}`);
     }
   };
 
@@ -266,12 +266,12 @@ export default function Navigator() {
         newName: newName,
       });
 
-      // 如果重命名的是当前打开的文件，更新编辑器中的文件路径
+      // If renamed file is currently open, update file path in editor
       if (currentFile === renameTarget.path) {
         setCurrentFile(newPath);
       }
 
-      // 刷新工作区
+      // Refresh workspace
       await handleRefresh();
       setRenameTarget(null);
     } catch (error) {
@@ -281,7 +281,7 @@ export default function Navigator() {
 
   const handleDelete = () => {
     if (!contextMenu) return;
-    // 打开确认对话框
+    // Open confirmation dialog
     setDeleteTarget(contextMenu.node);
     setContextMenu(null);
   };
@@ -290,20 +290,20 @@ export default function Navigator() {
     if (!deleteTarget) return;
 
     try {
-      // 调用后端删除文件/文件夹（包括数据库记录）
+      // Call backend to delete file/folder (including database records)
       await invoke("delete_file_with_metadata", {
         filePath: deleteTarget.path,
         workspacePath: workspace?.path,
       });
 
-      // 如果删除的是当前打开的文件，清空编辑器
+      // If deleted file is currently open, clear editor
       if (currentFile === deleteTarget.path) {
         setCurrentFile(null);
         setContent("");
         setDirty(false);
       }
 
-      // 如果删除的是文件夹，检查当前打开的文件是否在该文件夹下
+      // If deleted folder contains currently open file, clear editor
       if (deleteTarget.type === "folder" && currentFile && currentFile.startsWith(deleteTarget.path + '/')) {
         setCurrentFile(null);
         setContent("");
@@ -314,7 +314,7 @@ export default function Navigator() {
       setDeleteTarget(null);
     } catch (error) {
       console.error("Failed to delete:", error);
-      alert(`删除失败: ${error}`);
+      alert(`Delete failed: ${error}`);
       setDeleteTarget(null);
     }
   };
@@ -364,7 +364,7 @@ export default function Navigator() {
       <div
         className={`flex-1 overflow-auto p-2 relative ${isRootDropZone ? "bg-primary/10 border-2 border-primary border-dashed" : ""}`}
         onMouseMove={(e) => {
-          // 如果正在拖拽，且鼠标在空白区域（不在任何文件夹上），就是根目录拖放区
+          // If dragging and mouse is in blank area (not on any folder), it's root drop zone
           if (isDragging && draggedNode && !dropTarget) {
             setIsRootDropZone(true);
           } else {
@@ -372,9 +372,9 @@ export default function Navigator() {
           }
         }}
         onMouseUp={(e) => {
-          console.log("🖱️ 鼠标松开, isDragging:", isDragging, "dropTarget:", dropTarget?.name, "isRoot:", isRootDropZone);
+          console.log("🖱️ Mouse up, isDragging:", isDragging, "dropTarget:", dropTarget?.name, "isRoot:", isRootDropZone);
 
-          // 检查是否拖放到了文件夹上
+          // Check if dropped on folder
           if (isDragging && draggedNode) {
             if (dropTarget) {
               handleDragMove(dropTarget);
@@ -409,11 +409,11 @@ export default function Navigator() {
               </div>
             ))}
 
-            {/* 根目录拖放提示 */}
+            {/* Root drop zone indicator */}
             {isRootDropZone && isDragging && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg shadow-lg">
-                  移动到根目录
+                  Move to root directory
                 </div>
               </div>
             )}
