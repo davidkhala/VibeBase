@@ -540,7 +540,7 @@ pub fn show_in_folder(path: String) -> Result<(), String> {
                 .spawn()
         };
         
-        result.map_err(|e| format!("无法打开资源管理器: {}", e))?;
+        result.map_err(|e| format!("Failed to open Explorer: {}", e))?;
     }
     
     #[cfg(target_os = "linux")]
