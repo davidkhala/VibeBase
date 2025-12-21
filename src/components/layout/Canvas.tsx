@@ -27,28 +27,28 @@ export default function Canvas() {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [applying, setApplying] = useState(false);
 
-  // 保存文件历史记录（带时间间隔限制）
+  // Save file history (with time interval limit)
   const saveHistory = async (filePath: string, fileContent: string) => {
     if (!workspace?.path) return;
 
     const now = Date.now();
     const lastSaveTime = lastHistorySaveTime[filePath] || 0;
 
-    // 检查时间间隔：同一文件需要5分钟间隔
+    // Check time interval: same file needs 5-minute interval
     if (now - lastSaveTime < HISTORY_SAVE_INTERVAL) {
       console.log("Skipping history save: interval not reached");
       return;
     }
 
     try {
-      // 后端会检查 content_hash，如果内容相同会返回 false
+      // Backend checks content_hash, returns false if content is the same
       const saved = await invoke<boolean>("save_file_history", {
         workspacePath: workspace.path,
         filePath: filePath,
         content: fileContent,
       });
       if (saved) {
-        // 只有真正保存了才更新时间戳
+        // Only update timestamp if actually saved
         lastHistorySaveTime[filePath] = now;
         console.log("File history saved");
       } else {
@@ -59,16 +59,16 @@ export default function Canvas() {
     }
   };
 
-  // 自动保存
+  // Auto-save
   useEffect(() => {
     if (!currentFile || !isDirty) return;
 
-    // 清除之前的定时器
+    // Clear previous timer
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // 延迟 1 秒后自动保存
+    // Auto-save after 1 second delay
     saveTimeoutRef.current = setTimeout(async () => {
       try {
         await invoke("save_prompt", {
@@ -78,7 +78,7 @@ export default function Canvas() {
         setDirty(false);
         console.log("File auto-saved successfully");
 
-        // 保存文件历史
+        // Save file history
         await saveHistory(currentFile, content);
       } catch (error) {
         console.error("Failed to auto-save file:", error);
@@ -95,7 +95,7 @@ export default function Canvas() {
   const handleSave = async () => {
     if (!currentFile || !isDirty) return;
 
-    // 清除自动保存定时器
+    // Clear auto-save timer
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
@@ -108,7 +108,7 @@ export default function Canvas() {
       setDirty(false);
       console.log("File saved successfully");
 
-      // 保存文件历史
+      // Save file history
       await saveHistory(currentFile, content);
     } catch (error) {
       console.error("Failed to save file:", error);
@@ -121,13 +121,13 @@ export default function Canvas() {
     }
   };
 
-  // 格式化时间
+  // Format time
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp * 1000);
     return date.toLocaleString();
   };
 
-  // 应用历史版本
+  // Apply history version
   const handleApplyHistory = async () => {
     if (!workspace?.path || !historyPreview || !currentFile) return;
 
