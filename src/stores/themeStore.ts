@@ -8,7 +8,7 @@ interface ThemeStore {
   initTheme: () => void;
 }
 
-// 🔥 立即读取 localStorage 作为初始值，避免默认值导致的闪烁
+// Read localStorage immediately as initial value to avoid flicker from default
 const getInitialTheme = (): Theme => {
   try {
     const savedTheme = localStorage.getItem("vibebase_theme") as Theme | null;
@@ -32,8 +32,8 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   },
   
   initTheme: () => {
-    // 现在 initTheme 主要用于确保主题已经初始化
-    // 实际的初始化已经在 store 创建时完成
+    // initTheme is now mainly used to ensure theme is initialized
+    // Actual initialization is done when store is created
     const savedTheme = localStorage.getItem("vibebase_theme") as Theme | null;
     if (savedTheme && ["light", "dark", "system"].includes(savedTheme)) {
       set({ theme: savedTheme });
