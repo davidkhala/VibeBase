@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/tauri";
-import { Play, Loader2, AlertCircle, ChevronDown, Check, DollarSign, Trophy } from "lucide-react";
+import { Play, Loader2, AlertCircle, ChevronDown, Check, DollarSign, Trophy, X, Tag as TagIcon } from "lucide-react";
 import { useWorkspaceStore } from "../../stores/workspaceStore";
 import { useEditorStore } from "../../stores/editorStore";
 
@@ -17,6 +17,7 @@ interface ArenaSettings {
 interface ExecutionPanelProps {
   variables: string[];
   promptContent: string;
+  filePath: string;
 }
 
 interface ExecutionResult {
@@ -65,6 +66,7 @@ interface EnabledModel {
 export default function ExecutionPanel({
   variables,
   promptContent,
+  filePath,
 }: ExecutionPanelProps) {
   const { t } = useTranslation();
   const { workspace } = useWorkspaceStore();
@@ -78,6 +80,10 @@ export default function ExecutionPanel({
   const [isExecuting, setIsExecuting] = useState(false);
   const [results, setResults] = useState<Map<string, ExecutionResult>>(new Map());
   const [error, setError] = useState<string | null>(null);
+
+  // Tags state
+  const [tags, setTags] = useState<string[]>([]);
+  const [newTag, setNewTag] = useState("");
   const [arenaSettings, setArenaSettings] = useState<ArenaSettings>({
     concurrent_execution: true,
     max_concurrent: 3,
@@ -172,6 +178,65 @@ export default function ExecutionPanel({
       loadGlobalVariables();
     }
   }, [variables]);
+
+  // Load tags when file changes
+  useEffect(() => {
+    if (filePath && workspace) {
+      loadTags();
+    }
+  }, [filePath, workspace]);
+
+  const loadTags = async () => {
+    if (!workspace || !filePath) return;
+
+    try {
+      const metadataResult = await invoke<any>("get_prompt_metadata", {
+        workspacePath: workspace.path,
+        filePath: filePath,
+      });
+
+      if (metadataResult && metadataResult.tags) {
+        const parsedTags = JSON.parse(metadataResult.tags);
+        setTags(parsedTags);
+      } else {
+        setTags([]);
+      }
+    } catch (error) {
+      console.error("Failed to load tags:", error);
+      setTags([]);
+    }
+  };
+
+  const saveTags = async (newTags: string[]) => {
+    if (!workspace || !filePath) return;
+
+    try {
+      await invoke("save_prompt_metadata", {
+        workspacePath: workspace.path,
+        metadata: {
+          file_path: filePath,
+          provider_ref: "default",
+          tags: JSON.stringify(newTags),
+        },
+      });
+    } catch (error) {
+      console.error("Failed to save tags:", error);
+    }
+  };
+
+  const handleAddTag = () => {
+    if (!newTag.trim() || tags.includes(newTag.trim())) return;
+    const updatedTags = [...tags, newTag.trim()];
+    setTags(updatedTags);
+    setNewTag("");
+    saveTags(updatedTags);
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    const updatedTags = tags.filter(tag => tag !== tagToRemove);
+    setTags(updatedTags);
+    saveTags(updatedTags);
+  };
 
   const toggleModelSelection = (modelName: string) => {
     const newSelection = new Set(selectedModels);
@@ -401,51 +466,91 @@ export default function ExecutionPanel({
   const isArenaMode = selectedModels.size >= 1;
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Variables Input */}
-      <div className="p-4 space-y-3 border-b border-border">
-        <h3 className="text-sm font-semibold text-foreground">{t("execution.variables")}</h3>
+    <div className="flex flex-col h-full">
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-auto p-4 space-y-4">
+        {/* Tags Section */}
+        <div>
+          <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+            <TagIcon className="w-4 h-4" />
+            {t("metadata.tags")}
+          </h3>
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {tags.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-xs"
+              >
+                {tag}
+                <button
+                  onClick={() => handleRemoveTag(tag)}
+                  className="hover:bg-primary/20 rounded-sm p-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newTag}
+              onChange={(e) => setNewTag(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleAddTag()}
+              placeholder={t("metadata.add_tag_placeholder")}
+              className="flex-1 px-2 py-1.5 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            <button
+              onClick={handleAddTag}
+              disabled={!newTag.trim() || tags.includes(newTag.trim())}
+              className="px-3 py-1.5 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {t("metadata.add_tag")}
+            </button>
+          </div>
+        </div>
 
-        {variables.map((variable) => {
-          const isGlobalVariable = globalVariableKeys.has(variable);
-          return (
-            <div key={variable} className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                <span>{variable}</span>
-                {isGlobalVariable && (
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-                    {t("execution.global")}
-                  </span>
-                )}
-              </label>
-              <input
-                type="text"
-                value={variableValues[variable] || ""}
-                onChange={(e) =>
-                  setVariableValues({
-                    ...variableValues,
-                    [variable]: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-                placeholder={t("execution.enter_variable", { variable })}
-              />
+        {/* Variables Section */}
+        {variables.length > 0 && (
+          <div>
+            <h3 className="text-sm font-semibold mb-2">{t("execution.variables")}</h3>
+            <div className="space-y-2">
+              {variables.map((variable) => {
+                const isGlobalVariable = globalVariableKeys.has(variable);
+                return (
+                  <div key={variable}>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
+                      {variable}
+                      {isGlobalVariable && (
+                        <span className="text-xs px-1 py-0.5 bg-primary/10 text-primary rounded">
+                          {t("execution.global")}
+                        </span>
+                      )}
+                    </label>
+                    <input
+                      type="text"
+                      value={variableValues[variable] || ""}
+                      onChange={(e) => handleVariableChange(variable, e.target.value)}
+                      placeholder={t("execution.enter_variable", { variable })}
+                      className="w-full px-2 py-1.5 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
+          </div>
+        )}
 
-        {/* Model Selector (Multi-select) */}
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground">
-            {t("execution.select_model")}
-          </label>
+        {/* Model Selection Section */}
+        <div>
+          <h3 className="text-sm font-semibold mb-2">{t("execution.model")}</h3>
           <div className="relative">
             <button
               onClick={() => setShowModelMenu(!showModelMenu)}
-              className="w-full flex items-center justify-between px-3 py-2 bg-secondary hover:bg-secondary/80 rounded-md transition-colors text-sm"
+              className="w-full flex items-center justify-between px-3 py-2 text-sm bg-background border border-input rounded-md hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
               disabled={enabledModels.length === 0}
             >
-              <span>
+              <span className="truncate">
                 {selectedModels.size === 0
                   ? t("execution.select_model")
                   : selectedModels.size === 1
@@ -504,17 +609,10 @@ export default function ExecutionPanel({
               </>
             )}
           </div>
-        </div>
 
-        {/* Selected Models Info */}
-        {selectedModels.size > 0 && (
-          <div className="p-3 bg-secondary/50 rounded-md space-y-2">
-            <div className="text-xs text-muted-foreground">
-              {isArenaMode
-                ? t("execution.arena_mode_hint")
-                : t("execution.single_model_hint")}
-            </div>
-            <div className="flex flex-wrap gap-1.5">
+          {/* Selected Models Display */}
+          {selectedModels.size > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
               {Array.from(selectedModels).map(modelId => {
                 const model = enabledModels.find(m => m.id === modelId);
                 return model ? (
@@ -525,29 +623,27 @@ export default function ExecutionPanel({
                 ) : null;
               })}
             </div>
-          </div>
-        )}
+          )}
 
-        {enabledModels.length === 0 && (
-          <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-md flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 text-yellow-600 dark:text-yellow-400 mt-0.5" />
-            <div className="text-xs text-yellow-600 dark:text-yellow-400">
-              <p className="font-medium">{t("execution.no_models_enabled")}</p>
-              <p className="mt-1">
-                {t("execution.no_models_enabled_desc")}
-              </p>
+          {/* Warning when no models enabled */}
+          {enabledModels.length === 0 && (
+            <div className="mt-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-md flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
+              <div className="text-xs text-yellow-600 dark:text-yellow-400">
+                <p className="font-medium">{t("execution.no_models_enabled")}</p>
+                <p className="mt-1">{t("execution.no_models_enabled_desc")}</p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
+      </div>
 
-        {/* Run Button */}
+      {/* Fixed Arena Button at Bottom */}
+      <div className="flex-shrink-0 p-4 border-t border-border bg-card">
         <button
           onClick={handleExecute}
           disabled={!canExecute || isExecuting}
-          className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${isArenaMode
-            ? "bg-yellow-600 text-white hover:bg-yellow-700"
-            : "bg-primary text-primary-foreground hover:bg-primary/90"
-            }`}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-yellow-600 text-white hover:bg-yellow-700"
         >
           {isExecuting ? (
             <>
@@ -556,139 +652,11 @@ export default function ExecutionPanel({
             </>
           ) : (
             <>
-              {isArenaMode ? <Trophy className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-              {isArenaMode ? t("arena.title") : t("actions.run")}
+              <Trophy className="w-4 h-4" />
+              {t("arena.title")}
             </>
           )}
         </button>
-      </div>
-
-      {/* Output */}
-      <div className="flex-1 overflow-auto p-4">
-        {error && (
-          <div className="p-3 bg-destructive/10 border border-destructive rounded-md">
-            <p className="text-sm text-destructive font-medium">{t("execution.error")}</p>
-            <p className="text-xs text-destructive/80 mt-1">{error}</p>
-          </div>
-        )}
-
-        {results.size > 0 && (
-          <div className="space-y-4">
-            {isArenaMode ? (
-              /* Arena Mode: Side by Side Comparison */
-              <div className="space-y-4">
-                <h4 className="text-sm font-semibold text-foreground">
-                  {t("execution.arena_results")} ({results.size} {t("execution.models")})
-                </h4>
-                <div className={`grid gap-4 ${results.size === 2 ? "grid-cols-2" :
-                  results.size === 3 ? "grid-cols-3" :
-                    "grid-cols-2 md:grid-cols-3"
-                  }`}>
-                  {Array.from(results.entries()).map(([modelId, result]) => {
-                    const model = enabledModels.find(m => m.id === modelId);
-                    return (
-                      <div key={modelId} className="border border-border rounded-lg p-4 space-y-3">
-                        {/* Model Header */}
-                        <div className="pb-2 border-b border-border">
-                          <h5 className="font-semibold text-sm">{model?.model_name}</h5>
-                          <p className="text-xs text-muted-foreground">{model?.provider_type}</p>
-                        </div>
-
-                        {/* Output */}
-                        <div>
-                          <p className="text-xs font-medium text-muted-foreground mb-1">
-                            {t("execution.output")}
-                          </p>
-                          <div className="p-2 bg-secondary/50 rounded text-xs max-h-40 overflow-auto">
-                            <p className="whitespace-pre-wrap">{result.output}</p>
-                          </div>
-                        </div>
-
-                        {/* Metadata */}
-                        <div className="grid grid-cols-2 gap-1.5 text-xs">
-                          <div className="p-1.5 bg-secondary/30 rounded">
-                            <span className="text-muted-foreground">{t("execution.latency")}:</span>
-                            <span className="ml-1 font-medium">{result.metadata.latency_ms}ms</span>
-                          </div>
-                          <div className="p-1.5 bg-secondary/30 rounded">
-                            <span className="text-muted-foreground">{t("execution.cost")}:</span>
-                            <span className="ml-1 font-medium">${result.metadata.cost_usd.toFixed(4)}</span>
-                          </div>
-                          <div className="col-span-2 p-1.5 bg-secondary/30 rounded">
-                            <span className="text-muted-foreground">{t("execution.tokens")}:</span>
-                            <span className="ml-1 font-medium">
-                              {result.metadata.tokens_input} / {result.metadata.tokens_output}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              /* Single Model Mode */
-              Array.from(results.entries()).map(([modelName, result]) => (
-                <div key={modelName} className="space-y-4">
-                  {/* Output */}
-                  <div>
-                    <h4 className="text-sm font-semibold text-foreground mb-2">
-                      {t("execution.output")}
-                    </h4>
-                    <div className="p-3 bg-secondary rounded-md">
-                      <p className="text-sm text-foreground whitespace-pre-wrap">
-                        {result.output}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Metadata */}
-                  <div>
-                    <h4 className="text-sm font-semibold text-foreground mb-2">
-                      {t("execution.metadata")}
-                    </h4>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="p-2 bg-secondary rounded">
-                        <span className="text-muted-foreground">{t("execution.model")}:</span>
-                        <span className="ml-1 text-foreground font-medium">
-                          {result.metadata.model}
-                        </span>
-                      </div>
-                      <div className="p-2 bg-secondary rounded">
-                        <span className="text-muted-foreground">{t("execution.latency")}:</span>
-                        <span className="ml-1 text-foreground font-medium">
-                          {result.metadata.latency_ms}ms
-                        </span>
-                      </div>
-                      <div className="p-2 bg-secondary rounded">
-                        <span className="text-muted-foreground">{t("execution.tokens")}:</span>
-                        <span className="ml-1 text-foreground font-medium">
-                          {result.metadata.tokens_input} / {result.metadata.tokens_output}
-                        </span>
-                      </div>
-                      <div className="p-2 bg-secondary rounded">
-                        <span className="text-muted-foreground">{t("execution.cost")}:</span>
-                        <span className="ml-1 text-foreground font-medium">
-                          ${result.metadata.cost_usd.toFixed(4)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {results.size === 0 && !error && !isExecuting && (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-sm text-muted-foreground text-center">
-              {variables.length > 0
-                ? t("execution.fill_variables_hint")
-                : t("execution.click_run_hint")}
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
