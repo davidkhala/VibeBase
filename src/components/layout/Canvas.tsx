@@ -153,7 +153,7 @@ export default function Canvas() {
     }
   };
 
-  // 是否处于历史预览模式
+  // Whether in history preview mode
   const isHistoryPreviewMode = historyPreview !== null;
 
   return (
@@ -162,7 +162,7 @@ export default function Canvas() {
       <div className="h-10 border-b border-border flex items-center px-4 justify-between">
         <div className="flex items-center gap-2">
           {isHistoryPreviewMode ? (
-            // 历史预览模式 header
+            // History preview mode header
             <>
               <History className="w-4 h-4 text-amber-500" />
               <span className="text-sm font-medium text-foreground">
@@ -182,7 +182,7 @@ export default function Canvas() {
                 {currentFile.split("/").pop()?.replace('.vibe.md', '')}
               </span>
               {isDirty && (
-                <span className="text-xs text-muted-foreground">● 自动保存中...</span>
+                <span className="text-xs text-muted-foreground">● Auto-saving...</span>
               )}
             </>
           ) : (
@@ -192,7 +192,7 @@ export default function Canvas() {
           )}
         </div>
 
-        {/* 历史预览模式的操作按钮 */}
+        {/* History preview mode action buttons */}
         {isHistoryPreviewMode && (
           <div className="flex items-center gap-2">
             <button
@@ -219,7 +219,7 @@ export default function Canvas() {
       {/* Editor Area */}
       <div className="flex-1">
         {isHistoryPreviewMode ? (
-          // 历史预览模式 - 只读编辑器
+          // History preview mode - read-only editor
           <MonacoEditor
             key={`history-${historyPreview.historyId}`}
             value={historyPreview.content}
