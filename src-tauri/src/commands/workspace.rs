@@ -678,7 +678,7 @@ pub fn get_arena_statistics(
                     .or_else(|| output.get("metadata").and_then(|m| m.get("model")).and_then(|v| v.as_str()))
                     .unwrap_or("Unknown");
                 
-                // 记录唯一模型（使用 model_name）
+                // Record unique models (using model_name)
                 unique_models.insert(model_name.to_string());
                 
                 if let Some(metadata) = output.get("metadata") {
@@ -687,7 +687,7 @@ pub fn get_arena_statistics(
                     let latency = metadata.get("latency_ms").and_then(|v| v.as_i64()).unwrap_or(0);
                     let cost = metadata.get("cost_usd").and_then(|v| v.as_f64()).unwrap_or(0.0);
                     
-                    // Provider 统计（直接使用 provider_name）
+                    // Provider statistics (using provider_name directly)
                     let provider_token_entry = provider_tokens.entry(provider_name.to_string()).or_insert((0, 0));
                     provider_token_entry.0 += tokens_in;
                     provider_token_entry.1 += tokens_out;
