@@ -267,7 +267,7 @@ async fn fetch_deepseek_models(api_key: String, base_url: Option<String>) -> Res
 }
 
 async fn fetch_ollama_models(base_url: Option<String>) -> Result<Vec<ModelInfo>, String> {
-    // Ollama 使用不同的端点
+    // Ollama uses different endpoint
     let url = format!("{}/api/tags", base_url.unwrap_or_else(|| "http://localhost:11434".to_string()));
     
     let client = reqwest::Client::new();
