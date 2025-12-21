@@ -113,14 +113,14 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
       const data = await invoke<LLMProvider[]>("list_llm_providers");
       setProviders(data);
 
-      // 提取自定义 Provider（不在内置列表中的）
+      // Extract custom Providers (not in builtin list)
       const builtinIds = BUILTIN_PROVIDERS.map(p => p.id);
       const custom = data
         .filter(p => !builtinIds.includes(p.provider) && !p.is_default)
         .map(p => ({
           id: p.provider,
           name: p.name,
-          description: `自定义 Provider - ${p.base_url || 'OpenAI Compatible API'}`,
+          description: `Custom Provider - ${p.base_url || 'OpenAI Compatible API'}`,
         }));
       setCustomProviders(custom);
 
@@ -251,7 +251,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
       const selectedBuiltin = BUILTIN_PROVIDERS.find(p => p.id === selectedProvider);
       const selectedCustom = customProviders.find(p => p.id === selectedProvider);
 
-      // 对于自定义 Provider，使用 openai 类型进行获取
+      // For custom Provider, use openai type for fetching
       const providerType = selectedBuiltin ? selectedBuiltin.id : "openai";
       const baseUrl = selectedCustom ? selectedProviderConfig?.base_url : undefined;
 

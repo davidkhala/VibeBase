@@ -310,10 +310,10 @@ export default function ExecutionPanel({
       const outputsArray = Array.from(resultsMap.entries()).map(([modelId, result]) => {
         const model = enabledModels.find(m => m.id === modelId);
         return {
-          model_id: modelId,  // 原始 ID（用于内部引用）
-          provider_name: model?.provider_name || result.metadata.provider,  // Provider 显示名称
-          model_name: model?.model_name || result.metadata.model,  // 模型显示名称
-          provider_type: model?.provider_type || result.metadata.provider,  // Provider 类型
+          model_id: modelId,  // Original ID (for internal reference)
+          provider_name: model?.provider_name || result.metadata.provider,  // Provider display name
+          model_name: model?.model_name || result.metadata.model,  // Model display name
+          provider_type: model?.provider_type || result.metadata.provider,  // Provider type
           output: result.output,
           metadata: result.metadata,
         };
@@ -321,7 +321,7 @@ export default function ExecutionPanel({
 
       await invoke("save_arena_battle", {
         workspacePath: workspace.path,
-        promptFileId: null,  // TODO: 从当前文件上下文获取
+        promptFileId: null,  // TODO: Get from current file context
         promptContent: promptContent,
         inputVariables: JSON.stringify(variableValues),
         models: JSON.stringify(modelsArray),
