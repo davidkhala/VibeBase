@@ -122,7 +122,7 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
     variable.key.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // 获取高亮的匹配位置
+  // Get highlighted match positions
   const getMatchIndices = (text: string, query: string): [number, number] | null => {
     if (!query) return null;
     const index = text.toLowerCase().indexOf(query.toLowerCase());
