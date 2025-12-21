@@ -180,7 +180,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
     setWinnerModel(null);
     setBattleId(null);
 
-    // 立即显示所有选中模型的加载状态
+    // Immediately show loading state for all selected models
     const modelArray = Array.from(selectedModels);
     setLoadingModels(new Set(modelArray));
 
@@ -188,7 +188,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
       const newResults = new Map<string, ExecutionResult>();
 
       if (arenaSettings.concurrent_execution) {
-        // 并发执行
+        // Concurrent execution
         const chunks = [];
         for (let i = 0; i < modelArray.length; i += arenaSettings.max_concurrent) {
           chunks.push(modelArray.slice(i, i + arenaSettings.max_concurrent));
