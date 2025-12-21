@@ -66,12 +66,12 @@ pub fn create_new_prompt(
     // Check if file already exists
     if file_path.exists() {
         let file_name = file_path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown");
-        return Err(format!("文件已存在: {}", file_name));
+        return Err(format!("File already exists: {}", file_name));
     }
 
     // Create parent directories
     if let Some(parent) = file_path.parent() {
-        fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {}", e))?;
+        fs::create_dir_all(parent).map_err(|e| format!("Failed to create directory: {}", e))?;
     }
 
     // Create template content based on file extension
@@ -111,7 +111,7 @@ messages:
 "#
     };
 
-    fs::write(&file_path, template).map_err(|e| format!("创建文件失败: {}", e))?;
+    fs::write(&file_path, template).map_err(|e| format!("Failed to create file: {}", e))?;
     
     Ok(file_path.to_str().unwrap_or("").to_string())
 }
