@@ -191,7 +191,7 @@ async fn test_anthropic_connection(api_key: String, _base_url: Option<String>) -
 }
 
 async fn fetch_aihubmix_models(api_key: String, base_url: Option<String>) -> Result<Vec<ModelInfo>, String> {
-    // AiHubMix 使用 OpenAI 兼容接口
+    // AiHubMix uses OpenAI-compatible interface
     let url = format!("{}/models", base_url.unwrap_or_else(|| "https://aihubmix.com/v1".to_string()));
     
     let client = reqwest::Client::new();
@@ -229,7 +229,7 @@ async fn fetch_aihubmix_models(api_key: String, base_url: Option<String>) -> Res
 }
 
 async fn fetch_deepseek_models(api_key: String, base_url: Option<String>) -> Result<Vec<ModelInfo>, String> {
-    // DeepSeek 使用 OpenAI 兼容接口
+    // DeepSeek uses OpenAI-compatible interface
     let url = format!("{}/models", base_url.unwrap_or_else(|| "https://api.deepseek.com/v1".to_string()));
     
     let client = reqwest::Client::new();
@@ -358,6 +358,7 @@ async fn test_ollama_connection(base_url: Option<String>) -> Result<String, Stri
         Err(format!("Connection failed with status: {}", response.status()))
     }
 }
+
 
 
 
