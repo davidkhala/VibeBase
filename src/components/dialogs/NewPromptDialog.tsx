@@ -21,17 +21,17 @@ export default function NewPromptDialog({
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 检查文件是否存在
+  // Check if file exists
   const checkFileExists = (fullFileName: string): boolean => {
     if (!workspace || !workspace.file_tree) return false;
 
     const checkInFolder = (node: any): boolean => {
       if (node.type === "folder") {
         if (node.path === parentPath) {
-          // 找到目标文件夹，检查是否有同名文件
+          // Found target folder, check if there's a file with the same name
           return node.children.some((child: any) => child.name === fullFileName);
         }
-        // 递归检查子文件夹
+        // Recursively check subfolders
         return node.children.some((child: any) => checkInFolder(child));
       }
       return false;
@@ -49,9 +49,9 @@ export default function NewPromptDialog({
       fullFileName = `${fullFileName}.vibe.md`;
     }
 
-    // 检查文件是否已存在
+    // Check if file already exists
     if (checkFileExists(fullFileName)) {
-      setError(`文件已存在: ${fullFileName}`);
+      setError(`File already exists: ${fullFileName}`);
       return;
     }
 
