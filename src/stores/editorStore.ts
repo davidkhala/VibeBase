@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-// 历史预览信息
+// History preview information
 export interface HistoryPreview {
   historyId: string;
   content: string;
@@ -11,12 +11,12 @@ interface EditorStore {
   currentFile: string | null;
   content: string;
   isDirty: boolean;
-  // 历史预览状态
+  // History preview state
   historyPreview: HistoryPreview | null;
   setCurrentFile: (filePath: string | null) => void;
   setContent: (content: string) => void;
   setDirty: (dirty: boolean) => void;
-  // 历史预览方法
+  // History preview methods
   setHistoryPreview: (preview: HistoryPreview | null) => void;
   clearHistoryPreview: () => void;
 }
