@@ -27,7 +27,7 @@ export default function RenameDialog({
       setNewName(currentName);
       setError(null);
 
-      // 聚焦输入框并选中文件名（不包括扩展名）
+      // Focus input and select filename (excluding extension)
       setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus();
@@ -52,7 +52,7 @@ export default function RenameDialog({
 
     const trimmedName = newName.trim();
 
-    // 验证
+    // Validate
     if (!trimmedName) {
       setError(t("rename.error_empty"));
       return;
@@ -145,6 +145,7 @@ export default function RenameDialog({
     </div>
   );
 }
+
 
 
 
