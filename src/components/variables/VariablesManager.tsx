@@ -229,8 +229,8 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
                     <div
                       key={variable.id}
                       className={`grid grid-cols-[1fr_1fr_40px] gap-3 px-3 py-2 rounded transition-colors group ${matchIndices
-                          ? "bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30"
-                          : "hover:bg-accent/50"
+                        ? "bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30"
+                        : "hover:bg-accent/50"
                         }`}
                     >
                       <div className="relative">

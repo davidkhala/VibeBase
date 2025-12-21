@@ -539,7 +539,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
         votesObject[modelName] = 1;
       });
 
-      // 获胜者也使用 model_name
+      // Winner also uses model_name
       const winnerModelName = winner
         ? enabledModels.find(m => m.id === winner)?.model_name || winner
         : null;
@@ -559,21 +559,21 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
     const model = enabledModels.find(m => m.id === modelId);
     if (!model) return;
 
-    // 清除该模型的错误状态
+    // Clear error state for this model
     setModelErrors(prev => {
       const newMap = new Map(prev);
       newMap.delete(modelId);
       return newMap;
     });
 
-    // 清除该模型的结果
+    // Clear results for this model
     setResults(prev => {
       const newMap = new Map(prev);
       newMap.delete(modelId);
       return newMap;
     });
 
-    // 设置为加载状态
+    // Set to loading state
     setLoadingModels(prev => new Set(prev).add(modelId));
 
     try {
