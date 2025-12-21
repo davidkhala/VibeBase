@@ -58,10 +58,10 @@ pub fn create_folder(folder_path: String) -> Result<(), String> {
     
     // Check if folder already exists
     if path.exists() {
-        return Err(format!("文件夹已存在: {}", path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown")));
+        return Err(format!("Folder already exists: {}", path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown")));
     }
     
-    fs::create_dir_all(&folder_path).map_err(|e| format!("创建文件夹失败: {}", e))?;
+    fs::create_dir_all(&folder_path).map_err(|e| format!("Failed to create folder: {}", e))?;
     Ok(())
 }
 
@@ -108,13 +108,13 @@ pub fn delete_file(file_path: String) -> Result<(), String> {
     let path = Path::new(&file_path);
     
     if !path.exists() {
-        return Err(format!("路径不存在: {}", file_path));
+        return Err(format!("Path does not exist: {}", file_path));
     }
     
     if path.is_dir() {
-        fs::remove_dir_all(path).map_err(|e| format!("删除文件夹失败: {}", e))?;
+        fs::remove_dir_all(path).map_err(|e| format!("Failed to delete folder: {}", e))?;
     } else {
-        fs::remove_file(path).map_err(|e| format!("删除文件失败: {}", e))?;
+        fs::remove_file(path).map_err(|e| format!("Failed to delete file: {}", e))?;
     }
     
     Ok(())
