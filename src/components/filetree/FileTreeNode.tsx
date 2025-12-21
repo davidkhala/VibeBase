@@ -30,19 +30,19 @@ export default function FileTreeNode({
   const clickTimer = useRef<NodeJS.Timeout | null>(null);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    // 只处理左键
+    // Only handle left button
     if (e.button !== 0) return;
 
-    // 通知父组件开始拖拽检测
+    // Notify parent component to start drag detection
     if (onMouseDownCapture) {
       onMouseDownCapture(node, e);
     }
   };
 
   const handleMouseEnter = () => {
-    // 只有文件夹在拖拽时才响应 hover
+    // Only respond to hover when dragging folders
     if (isBeingDragged && draggedNode && node.type === "folder" && node.path !== draggedNode.path) {
-      console.log("🎯 Hover 文件夹:", node.name);
+      console.log("🎯 Hover folder:", node.name);
       if (onHoverFolder) {
         onHoverFolder(node);
       }
