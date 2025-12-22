@@ -5,6 +5,7 @@ import LLMProviderManager from "./LLMProviderManager";
 import WorkspaceManager from "./WorkspaceManager";
 import AboutPanel from "./AboutPanel";
 import GitSettingsPanel from "./GitSettingsPanel";
+import AutoSaveIndicator from "../ui/AutoSaveIndicator";
 import { appWindow } from "@tauri-apps/api/window";
 import { useTranslation } from "react-i18next";
 import { useThemeStore } from "../../stores/themeStore";
@@ -47,10 +48,18 @@ export default function SettingsPanel({ onClose, isStandaloneWindow = false }: S
     card_density: "normal",
   });
   const [arenaSettingsSaved, setArenaSettingsSaved] = useState(true);
-  const [arenaSaveStatus, setArenaSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
   const [arenaInitialLoad, setArenaInitialLoad] = useState(true);
-  const [providersSaveStatus, setProvidersSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
-  const [generalSaveStatus, setGeneralSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
+  
+  // 统一的自动保存状态管理
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+
+  // 统一的状态更新函数
+  const updateSaveStatus = (status: "saving" | "saved") => {
+    setSaveStatus(status);
+    if (status === "saved") {
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    }
+  };
 
   // Load arena settings
   useEffect(() => {
@@ -67,15 +76,14 @@ export default function SettingsPanel({ onClose, isStandaloneWindow = false }: S
     if (arenaSettingsSaved || activeTab !== "arena") return;
 
     const autoSaveTimer = setTimeout(async () => {
-      setArenaSaveStatus("saving");
+      updateSaveStatus("saving");
       try {
         await invoke("save_arena_settings", { settings: arenaSettings });
         setArenaSettingsSaved(true);
-        setArenaSaveStatus("saved");
-        setTimeout(() => setArenaSaveStatus("saved"), 2000);
+        updateSaveStatus("saved");
       } catch (error) {
         console.error("Failed to auto-save arena settings:", error);
-        setArenaSaveStatus("unsaved");
+        setSaveStatus("idle");
       }
     }, 1000); // Auto-save 1 second after last change
 
@@ -137,16 +145,14 @@ export default function SettingsPanel({ onClose, isStandaloneWindow = false }: S
     window.dispatchEvent(new StorageEvent("storage", { key: "language", newValue: lang }));
 
     // Show auto-save status
-    setGeneralSaveStatus("saved");
-    setTimeout(() => setGeneralSaveStatus("saved"), 2000);
+    updateSaveStatus("saved");
   };
 
   const handleThemeChange = (newTheme: "light" | "dark" | "system") => {
     setTheme(newTheme);
 
     // Show auto-save status
-    setGeneralSaveStatus("saved");
-    setTimeout(() => setGeneralSaveStatus("saved"), 2000);
+    updateSaveStatus("saved");
   };
 
   const menuItems: { id: SettingsTab; label: string; icon: any }[] = [
@@ -162,6 +168,9 @@ export default function SettingsPanel({ onClose, isStandaloneWindow = false }: S
 
   return (
     <div className={isStandaloneWindow ? "w-full h-full flex items-center justify-center bg-card" : "fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center"}>
+      {/* 全局自动保存提示 */}
+      <AutoSaveIndicator status={saveStatus} />
+      
       <div className={isStandaloneWindow ? "w-full h-full bg-card flex flex-col" : "w-[1200px] h-[800px] bg-card border border-border rounded-lg shadow-xl flex flex-col"}>
         {/* Header */}
         <div
@@ -227,25 +236,12 @@ export default function SettingsPanel({ onClose, isStandaloneWindow = false }: S
                 );
               })}
             </div>
-
-            {/* Auto-save Status Bar */}
-            <div className="border-t border-border px-4 py-3">
-              <p className="text-xs text-muted-foreground">
-                {activeTab === "providers" && providersSaveStatus === "saving" && t("metadata.auto_saving")}
-                {activeTab === "providers" && providersSaveStatus === "saved" && t("metadata.auto_saved")}
-                {activeTab === "arena" && arenaSaveStatus === "saving" && t("metadata.auto_saving")}
-                {activeTab === "arena" && arenaSaveStatus === "saved" && t("metadata.auto_saved")}
-                {activeTab === "general" && generalSaveStatus === "saving" && t("metadata.auto_saving")}
-                {activeTab === "general" && generalSaveStatus === "saved" && t("metadata.auto_saved")}
-                {(activeTab === "workspace" || activeTab === "about") && " "}
-              </p>
-            </div>
           </div>
 
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col overflow-hidden">
-            {activeTab === "providers" && <LLMProviderManager onSaveStatusChange={setProvidersSaveStatus} />}
-            {activeTab === "git" && <GitSettingsPanel />}
+            {activeTab === "providers" && <LLMProviderManager onSaveStatusChange={updateSaveStatus} />}
+            {activeTab === "git" && <GitSettingsPanel onSaveStatusChange={updateSaveStatus} />}
             {activeTab === "arena" && (
               <div className="flex-1 overflow-auto p-8 max-w-3xl mx-auto w-full">
                 <div>
