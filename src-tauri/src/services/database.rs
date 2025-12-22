@@ -165,6 +165,7 @@ pub struct LLMProviderConfig {
 /// Stores file metadata, execution history, evaluation results
 pub struct ProjectDatabase {
     conn: Connection,
+    #[allow(dead_code)]
     workspace_path: PathBuf,
 }
 
@@ -394,6 +395,7 @@ impl ProjectDatabase {
         files.collect()
     }
 
+    #[allow(dead_code)]
     pub fn save_execution(&self, result: &ExecutionResult, prompt_file_id: &str, provider_name: &str) -> Result<()> {
         self.conn.execute(
             "INSERT INTO execution_history (
@@ -424,6 +426,7 @@ impl ProjectDatabase {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn get_recent_executions(&self, limit: usize) -> Result<Vec<ExecutionResult>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, output, model, provider, latency_ms, tokens_input, tokens_output, cost_usd, timestamp
