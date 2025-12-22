@@ -5,6 +5,15 @@ All notable changes to VibeBase will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.7] - 2025-12-23
+
+### Fixed
+- Fixed Arena History and Arena Statistics windows not opening in production build
+- Added missing HTML entry points (arena-history.html, arena-statistics.html) to Vite build configuration
+
+### Changed
+- Updated Vite multi-page build configuration to include all window entry points
+
 ## [0.1.6] - 2025-12-23
 
 ### Fixed
