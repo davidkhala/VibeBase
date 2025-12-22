@@ -122,6 +122,8 @@ fn main() {
             get_git_diff,
             get_workspace_git_summary,
             generate_commit_message,
+            get_system_git_config,
+            init_git_repository,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
