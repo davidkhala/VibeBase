@@ -501,7 +501,13 @@
     "selectFiles": "選擇要提交的檔案",
     "noFilesToCommit": "沒有檔案可以提交",
     "gitNotInitialized": "Git 儲存庫未初始化",
-    "gitNotInitializedDesc": "此專案尚未初始化 Git 儲存庫。請在專案目錄中執行 'git init' 來初始化。",
+    "gitNotInitializedDesc": "此專案尚未初始化 Git 儲存庫。您可以點擊下方按鈕初始化。",
+    "initRepository": "初始化 Git 儲存庫",
+    "confirmInit": "確認初始化 Git 儲存庫",
+    "confirmInitDesc": "這將在當前工作區建立一個新的 Git 儲存庫。是否繼續？",
+    "initializing": "初始化中...",
+    "initSuccess": "Git 儲存庫初始化成功",
+    "initFailed": "Git 儲存庫初始化失敗",
     "openInTerminal": "在終端機中開啟"
   }
 }

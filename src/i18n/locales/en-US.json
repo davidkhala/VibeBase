@@ -502,7 +502,13 @@
     "selectFiles": "Select Files to Commit",
     "noFilesToCommit": "No Files to Commit",
     "gitNotInitialized": "Git Repository Not Initialized",
-    "gitNotInitializedDesc": "This project has not been initialized as a Git repository. Please run 'git init' in the project directory to initialize.",
+    "gitNotInitializedDesc": "This project has not been initialized as a Git repository. You can initialize it by clicking the button below.",
+    "initRepository": "Initialize Git Repository",
+    "confirmInit": "Confirm Initialize Git Repository",
+    "confirmInitDesc": "This will create a new Git repository in the current workspace. Continue?",
+    "initializing": "Initializing...",
+    "initSuccess": "Git repository initialized successfully",
+    "initFailed": "Failed to initialize Git repository",
     "openInTerminal": "Open in Terminal"
   }
 }

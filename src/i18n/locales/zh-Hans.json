@@ -501,7 +501,13 @@
     "selectFiles": "选择要提交的文件",
     "noFilesToCommit": "没有文件可以提交",
     "gitNotInitialized": "Git 仓库未初始化",
-    "gitNotInitializedDesc": "此项目尚未初始化 Git 仓库。请在项目目录中运行 'git init' 来初始化。",
+    "gitNotInitializedDesc": "此项目尚未初始化 Git 仓库。您可以点击下方按钮初始化。",
+    "initRepository": "初始化 Git 仓库",
+    "confirmInit": "确认初始化 Git 仓库",
+    "confirmInitDesc": "这将在当前工作区创建一个新的 Git 仓库。是否继续？",
+    "initializing": "初始化中...",
+    "initSuccess": "Git 仓库初始化成功",
+    "initFailed": "Git 仓库初始化失败",
     "openInTerminal": "在终端中打开"
   }
 }
