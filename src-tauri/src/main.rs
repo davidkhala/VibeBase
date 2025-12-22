@@ -30,14 +30,12 @@ fn main() {
     let llm_provider_state = LLMProviderState::new();
     let variables_state = VariablesState::new(app_db);
     let app_settings_state = AppSettingsState::new();
-    let git_state = GitState::new();
 
     tauri::Builder::default()
         .manage(app_state)
         .manage(llm_provider_state)
         .manage(variables_state)
         .manage(app_settings_state)
-        .manage(git_state)
         .invoke_handler(tauri::generate_handler![
             open_workspace,
             list_prompts,

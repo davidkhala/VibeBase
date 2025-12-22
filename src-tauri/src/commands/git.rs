@@ -1,22 +1,8 @@
 use crate::models::git::*;
 use crate::services::git_service::GitService;
 use crate::services::keychain::KeychainService;
-use std::sync::Mutex;
 use git2::Config;
 use serde::{Serialize, Deserialize};
-
-pub struct GitState {
-    #[allow(dead_code)]
-    pub current_workspace: Mutex<Option<String>>,
-}
-
-impl GitState {
-    pub fn new() -> Self {
-        Self {
-            current_workspace: Mutex::new(None),
-        }
-    }
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SystemGitConfig {
