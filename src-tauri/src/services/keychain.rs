@@ -44,5 +44,75 @@ impl KeychainService {
             false
         }
     }
+
+    // Git SSH Passphrase
+    pub fn save_git_ssh_passphrase(workspace_id: &str, passphrase: &str) -> Result<(), String> {
+        let key = format!("git:ssh_passphrase:{}", workspace_id);
+        let entry = Entry::new(SERVICE_NAME, &key)
+            .map_err(|e| format!("Keychain error: {}", e))?;
+        
+        entry
+            .set_password(passphrase)
+            .map_err(|e| format!("Failed to save SSH passphrase: {}", e))?;
+        
+        Ok(())
+    }
+
+    pub fn get_git_ssh_passphrase(workspace_id: &str) -> Result<String, String> {
+        let key = format!("git:ssh_passphrase:{}", workspace_id);
+        let entry = Entry::new(SERVICE_NAME, &key)
+            .map_err(|e| format!("Keychain error: {}", e))?;
+        
+        entry
+            .get_password()
+            .map_err(|e| format!("SSH passphrase not found: {}", e))
+    }
+
+    pub fn delete_git_ssh_passphrase(workspace_id: &str) -> Result<(), String> {
+        let key = format!("git:ssh_passphrase:{}", workspace_id);
+        let entry = Entry::new(SERVICE_NAME, &key)
+            .map_err(|e| format!("Keychain error: {}", e))?;
+        
+        entry
+            .delete_password()
+            .map_err(|e| format!("Failed to delete SSH passphrase: {}", e))?;
+        
+        Ok(())
+    }
+
+    // Git Token (GitHub/GitLab/etc)
+    pub fn save_git_token(workspace_id: &str, token: &str) -> Result<(), String> {
+        let key = format!("git:token:{}", workspace_id);
+        let entry = Entry::new(SERVICE_NAME, &key)
+            .map_err(|e| format!("Keychain error: {}", e))?;
+        
+        entry
+            .set_password(token)
+            .map_err(|e| format!("Failed to save Git token: {}", e))?;
+        
+        Ok(())
+    }
+
+    pub fn get_git_token(workspace_id: &str) -> Result<String, String> {
+        let key = format!("git:token:{}", workspace_id);
+        let entry = Entry::new(SERVICE_NAME, &key)
+            .map_err(|e| format!("Keychain error: {}", e))?;
+        
+        entry
+            .get_password()
+            .map_err(|e| format!("Git token not found: {}", e))
+    }
+
+    pub fn delete_git_token(workspace_id: &str) -> Result<(), String> {
+        let key = format!("git:token:{}", workspace_id);
+        let entry = Entry::new(SERVICE_NAME, &key)
+            .map_err(|e| format!("Keychain error: {}", e))?;
+        
+        entry
+            .delete_password()
+            .map_err(|e| format!("Failed to delete Git token: {}", e))?;
+        
+        Ok(())
+    }
 }
 
