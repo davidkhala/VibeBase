@@ -142,12 +142,14 @@ export const useGitStore = create<GitStore>((set, get) => ({
     if (!workspacePath) return;
 
     try {
+      console.log('[GitStore] Refreshing status for:', workspacePath);
       const status = await invoke<GitStatus>('get_git_status', {
         workspacePath,
       });
+      console.log('[GitStore] Status loaded:', status);
       set({ status, currentBranch: status.current_branch });
     } catch (error) {
-      console.error('Failed to get Git status:', error);
+      console.error('[GitStore] Failed to get Git status:', error);
       set({ status: null });
     }
   },
