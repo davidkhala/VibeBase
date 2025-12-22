@@ -28,6 +28,13 @@ impl GitService {
         }
     }
 
+    // Initialize a new git repository
+    pub fn init_repo(&self) -> Result<()> {
+        let repo_path = Path::new(&self.workspace_path);
+        Repository::init(repo_path)?;
+        Ok(())
+    }
+
     // Load Git config from database
     pub fn load_config(&self) -> Result<GitConfig> {
         let db = ProjectDatabase::new(Path::new(&self.workspace_path))?;
@@ -135,11 +142,14 @@ impl GitService {
             }
         }
         
-        let head = repo.head()?;
-        let current_branch = head.shorthand().unwrap_or("HEAD").to_string();
+        // Handle unborn branch (newly initialized repo with no commits)
+        let current_branch = match repo.head() {
+            Ok(head) => head.shorthand().unwrap_or("main").to_string(),
+            Err(_) => "main".to_string(), // Default branch for new repo
+        };
         
-        // Get ahead/behind info
-        let (ahead, behind) = self.get_ahead_behind(&repo)?;
+        // Get ahead/behind info (will be 0 for new repo)
+        let (ahead, behind) = self.get_ahead_behind(&repo).unwrap_or((0, 0));
         
         // Check for conflicts
         let index = repo.index()?;
@@ -176,16 +186,20 @@ impl GitService {
     // List branches
     pub fn list_branches(&self) -> Result<Vec<GitBranch>> {
         let repo = self.init_repository()?;
-        let branches = repo.branches(None)?;
-        let head = repo.head()?;
-        let current_branch_name = head.shorthand().unwrap_or("");
         
+        // Handle unborn branch (no commits yet)
+        let current_branch_name = match repo.head() {
+            Ok(head) => head.shorthand().unwrap_or("main").to_string(),
+            Err(_) => "main".to_string(), // Default for new repo
+        };
+        
+        let branches = repo.branches(None)?;
         let mut result = Vec::new();
         
         for branch_result in branches {
             if let Ok((branch, branch_type)) = branch_result {
                 let name = branch.name()?.unwrap_or("").to_string();
-                let is_current = name == current_branch_name;
+                let is_current = &name == &current_branch_name;
                 let is_remote = branch_type == BranchType::Remote;
                 
                 let upstream = if !is_remote {
@@ -207,6 +221,18 @@ impl GitService {
                     last_commit_time,
                 });
             }
+        }
+        
+        // If no branches found (new repo), add the default branch
+        if result.is_empty() {
+            result.push(GitBranch {
+                name: current_branch_name,
+                is_current: true,
+                is_remote: false,
+                upstream: None,
+                last_commit_message: None,
+                last_commit_time: None,
+            });
         }
         
         Ok(result)
@@ -259,10 +285,18 @@ impl GitService {
         let repo = self.init_repository()?;
         let config = self.load_config()?;
         
-        let signature = Signature::now(
-            config.git_user_name.as_deref().unwrap_or("VibeBase User"),
-            config.git_user_email.as_deref().unwrap_or("user@vibebase.local"),
-        )?;
+        // Use configured user info or fallback to git config
+        let (user_name, user_email) = if let (Some(name), Some(email)) = (&config.git_user_name, &config.git_user_email) {
+            (name.clone(), email.clone())
+        } else {
+            // Try to read from git config
+            let git_config = repo.config()?;
+            let name = git_config.get_string("user.name").unwrap_or_else(|_| "VibeBase User".to_string());
+            let email = git_config.get_string("user.email").unwrap_or_else(|_| "user@vibebase.local".to_string());
+            (name, email)
+        };
+        
+        let signature = Signature::now(&user_name, &user_email)?;
         
         let mut index = repo.index()?;
         let tree_id = index.write_tree()?;
@@ -361,8 +395,19 @@ impl GitService {
     // Get commit history
     pub fn get_commit_history(&self, limit: usize) -> Result<Vec<GitCommit>> {
         let repo = self.init_repository()?;
+        
+        // Handle empty repository (no commits yet)
+        if repo.head().is_err() {
+            return Ok(Vec::new());
+        }
+        
         let mut revwalk = repo.revwalk()?;
-        revwalk.push_head()?;
+        
+        // Try to push HEAD, return empty if it fails (unborn branch)
+        if revwalk.push_head().is_err() {
+            return Ok(Vec::new());
+        }
+        
         revwalk.set_sorting(git2::Sort::TIME)?;
         
         let mut commits = Vec::new();
@@ -407,8 +452,12 @@ impl GitService {
         }
         
         let repo = repo_result?;
-        let head = repo.head()?;
-        let current_branch = head.shorthand().map(String::from);
+        
+        // Handle unborn branch (newly initialized repo)
+        let current_branch = match repo.head() {
+            Ok(head) => head.shorthand().map(String::from),
+            Err(_) => Some("main".to_string()), // Default branch for new repo
+        };
         
         // Get remote URL
         let config = self.load_config().ok();
@@ -418,7 +467,7 @@ impl GitService {
         let statuses = repo.statuses(None)?;
         let changes_count = statuses.iter().count();
         
-        // Get ahead/behind
+        // Get ahead/behind (will be 0 for new repo)
         let (ahead, behind) = self.get_ahead_behind(&repo).unwrap_or((0, 0));
         
         Ok(GitSummary {
@@ -435,6 +484,11 @@ impl GitService {
     fn get_remote_callbacks(&self, config: &GitConfig) -> Result<RemoteCallbacks> {
         let mut callbacks = RemoteCallbacks::new();
         let config_clone = config.clone();
+        
+        // Accept all SSH certificates (simplified for now)
+        callbacks.certificate_check(|_cert, _host| {
+            Ok(git2::CertificateCheckStatus::CertificateOk)
+        });
         
         callbacks.credentials(move |_url, username_from_url, _allowed_types| {
             if let Some(auth_method) = &config_clone.auth_method {
