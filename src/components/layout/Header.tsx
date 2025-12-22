@@ -94,8 +94,8 @@ export default function Header() {
 
   const getCurrentLanguageDisplay = () => {
     const langMap: Record<string, string> = {
-      "zh-CN": "简",
-      "zh-TW": "繁",
+      "zh-Hans": "简",
+      "zh-Hant": "繁",
       "en-US": "En"
     };
     return langMap[i18n.language] || "简";
@@ -266,7 +266,7 @@ export default function Header() {
               />
               <div className="absolute right-0 mt-2 w-40 bg-popover border border-border rounded-md shadow-lg z-20">
                 <div className="py-1">
-                  {(["zh-CN", "zh-TW", "en-US"] as const).map((lang) => (
+                  {(["zh-Hans", "zh-Hant", "en-US"] as const).map((lang) => (
                     <button
                       key={lang}
                       onClick={() => changeLanguage(lang)}
