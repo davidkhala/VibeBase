@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { X, GitBranch, RefreshCw, Upload, Download, GitCommit, History, Settings, CheckSquare, Square, FolderGit } from "lucide-react";
+import { X, GitBranch, RefreshCw, Upload, Download, GitCommit, History, CheckSquare, Square, FolderGit } from "lucide-react";
 import { useGitStore } from "../../stores/gitStore";
 import CommitDialog from "./CommitDialog";
 import { invoke } from "@tauri-apps/api/tauri";
