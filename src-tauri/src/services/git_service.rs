@@ -321,18 +321,56 @@ impl GitService {
         let repo = self.init_repository()?;
         let config = self.load_config()?;
         
-        // Fetch
-        let mut remote = repo.find_remote(config.remote_name.as_deref().unwrap_or("origin"))?;
+        let remote_name = config.remote_name.as_deref().unwrap_or("origin");
+        
+        // Check if remote exists
+        let mut remote = match repo.find_remote(remote_name) {
+            Ok(r) => r,
+            Err(_) => {
+                return Ok(PullResult {
+                    success: false,
+                    message: "Remote 'origin' not configured. Please add a remote first: git remote add origin <url>".to_string(),
+                    conflicts: Vec::new(),
+                    files_changed: 0,
+                });
+            }
+        };
+        // Get current branch
+        let head = match repo.head() {
+            Ok(h) => h,
+            Err(_) => {
+                return Ok(PullResult {
+                    success: false,
+                    message: "Cannot pull: no commits yet. Make an initial commit first.".to_string(),
+                    conflicts: Vec::new(),
+                    files_changed: 0,
+                });
+            }
+        };
+        
+        let branch_name = head.shorthand().unwrap_or("main");
+        
         let callbacks = self.get_remote_callbacks(&config)?;
         let mut fetch_options = FetchOptions::new();
         fetch_options.remote_callbacks(callbacks);
         
-        remote.fetch(&["HEAD"], Some(&mut fetch_options), None)?;
+        // Fetch from remote
+        remote.fetch(&[branch_name], Some(&mut fetch_options), None)?;
         
-        // Merge
-        let fetch_head = repo.find_reference("FETCH_HEAD")?;
+        // Get the upstream branch
+        let fetch_head = match repo.find_reference("FETCH_HEAD") {
+            Ok(r) => r,
+            Err(_) => {
+                return Ok(PullResult {
+                    success: true,
+                    message: "Already up to date (no upstream branch)".to_string(),
+                    conflicts: Vec::new(),
+                    files_changed: 0,
+                });
+            }
+        };
+        
         let fetch_commit = repo.reference_to_annotated_commit(&fetch_head)?;
-        
         let analysis = repo.merge_analysis(&[&fetch_commit])?;
         
         if analysis.0.is_up_to_date() {
@@ -346,7 +384,7 @@ impl GitService {
         
         if analysis.0.is_fast_forward() {
             // Fast-forward merge
-            let refname = format!("refs/heads/{}", repo.head()?.shorthand().unwrap_or("main"));
+            let refname = format!("refs/heads/{}", branch_name);
             let mut reference = repo.find_reference(&refname)?;
             reference.set_target(fetch_commit.id(), "Fast-forward")?;
             repo.set_head(&refname)?;
@@ -363,7 +401,7 @@ impl GitService {
         // Normal merge (simplified - conflicts not fully handled)
         Ok(PullResult {
             success: false,
-            message: "Merge required - not implemented yet".to_string(),
+            message: "Merge required - manual merge not yet implemented".to_string(),
             conflicts: Vec::new(),
             files_changed: 0,
         })
@@ -374,7 +412,19 @@ impl GitService {
         let repo = self.init_repository()?;
         let config = self.load_config()?;
         
-        let mut remote = repo.find_remote(config.remote_name.as_deref().unwrap_or("origin"))?;
+        let remote_name = config.remote_name.as_deref().unwrap_or("origin");
+        
+        // Check if remote exists
+        let mut remote = match repo.find_remote(remote_name) {
+            Ok(r) => r,
+            Err(_) => {
+                return Ok(PushResult {
+                    success: false,
+                    message: "Remote 'origin' not configured. Please add a remote first: git remote add origin <url>".to_string(),
+                    commits_pushed: 0,
+                });
+            }
+        };
         let callbacks = self.get_remote_callbacks(&config)?;
         let mut push_options = PushOptions::new();
         push_options.remote_callbacks(callbacks);
@@ -501,10 +551,21 @@ impl GitService {
                                 None
                             };
                             
+                            // Expand ~ to home directory
+                            let expanded_path = if ssh_key_path.starts_with("~/") {
+                                if let Some(home) = dirs_next::home_dir() {
+                                    home.join(&ssh_key_path[2..])
+                                } else {
+                                    Path::new(ssh_key_path).to_path_buf()
+                                }
+                            } else {
+                                Path::new(ssh_key_path).to_path_buf()
+                            };
+                            
                             return Cred::ssh_key(
                                 username_from_url.unwrap_or("git"),
                                 None,
-                                Path::new(ssh_key_path),
+                                &expanded_path,
                                 passphrase.as_deref(),
                             );
                         }
