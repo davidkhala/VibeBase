@@ -122,7 +122,7 @@ pub async fn get_workspace_git_summary(workspace_path: String) -> Result<GitSumm
 #[tauri::command]
 pub async fn generate_commit_message(
     workspace_path: String,
-    provider_name: Option<String>,
+    _provider_name: Option<String>,
 ) -> Result<String, String> {
     let service = GitService::new(&workspace_path);
     let diff = service.get_diff().map_err(|e| e.to_string())?;
