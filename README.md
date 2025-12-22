@@ -337,21 +337,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-### Development Guidelines
-
-- Follow TypeScript and Rust best practices
-- Add tests for new features
-- Update documentation
-- Maintain i18n translations
-
-### Areas We Need Help
-
-- 🎨 UI/UX improvements
-- 🌍 Translations (Japanese, Korean, etc.)
-- 🐛 Bug fixes
-- 📚 Documentation
-- 🧪 Testing
-
 ## License
 
 MIT License - see [LICENSE](./LICENSE) file for details
@@ -359,5 +344,3 @@ MIT License - see [LICENSE](./LICENSE) file for details
 ---
 
 **⭐ Star us on GitHub if you find VibeBase useful!**
-
-**Status**: 🟢 Alpha | **Version**: v0.1.0 | **License**: MIT
