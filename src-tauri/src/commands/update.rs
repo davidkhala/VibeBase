@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use tauri::Manager;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct VersionInfo {
