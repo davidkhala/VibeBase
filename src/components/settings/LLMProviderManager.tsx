@@ -42,7 +42,7 @@ const BUILTIN_PROVIDERS = [
 ];
 
 interface LLMProviderManagerProps {
-  onSaveStatusChange?: (status: "saved" | "saving" | "unsaved") => void;
+  onSaveStatusChange?: (status: "saving" | "saved") => void;
 }
 
 export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderManagerProps) {
@@ -53,7 +53,6 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
   const [modelSearchQuery, setModelSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(true);
-  const [_saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Selected provider details
@@ -93,15 +92,9 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
     if (saved || !selectedProvider) return;
 
     const autoSaveTimer = setTimeout(async () => {
-      setSaveStatus("saving");
       onSaveStatusChange?.("saving");
       await handleSaveInternal();
-      setSaveStatus("saved");
       onSaveStatusChange?.("saved");
-      setTimeout(() => {
-        setSaveStatus("saved");
-        onSaveStatusChange?.("saved");
-      }, 2000);
     }, 1000); // Auto-save 1 second after last change
 
     return () => clearTimeout(autoSaveTimer);
