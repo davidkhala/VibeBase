@@ -27,7 +27,6 @@ export default function GitPanel({ onClose }: GitPanelProps) {
   } = useGitStore();
 
   const [showCommitDialog, setShowCommitDialog] = useState(false);
-  const [showBranches, setShowBranches] = useState(false);
   const [showInitConfirm, setShowInitConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -232,9 +231,18 @@ export default function GitPanel({ onClose }: GitPanelProps) {
             <div className="flex items-center gap-3">
               <GitBranch className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">{t("git.title")}</h2>
-              <span className="px-2 py-1 bg-primary/10 text-primary text-sm rounded">
-                {currentBranch || status.current_branch}
-              </span>
+              <select
+                value={currentBranch || status.current_branch}
+                onChange={(e) => handleSwitchBranch(e.target.value)}
+                disabled={loading}
+                className="px-3 py-1.5 bg-primary/10 text-primary text-sm rounded border border-primary/20 hover:bg-primary/20 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                {branches.map((branch) => (
+                  <option key={branch.name} value={branch.name}>
+                    {branch.name} {branch.is_current ? "●" : ""}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -304,13 +312,6 @@ export default function GitPanel({ onClose }: GitPanelProps) {
               <Upload className="w-4 h-4" />
               {t("git.push")}
             </button>
-            <button
-              onClick={() => setShowBranches(!showBranches)}
-              className="px-3 py-1.5 bg-secondary hover:bg-accent rounded transition-colors flex items-center gap-2"
-            >
-              <GitBranch className="w-4 h-4" />
-              {t("git.branches")}
-            </button>
             {selectedFiles.size > 0 && (
               <button
                 onClick={handleStageSelected}
@@ -332,7 +333,7 @@ export default function GitPanel({ onClose }: GitPanelProps) {
           {/* Content */}
           <div className="flex-1 overflow-hidden flex">
             {/* Changes List */}
-            <div className="flex-1 overflow-auto p-4">
+            <div className="flex-1 overflow-auto p-4 border-r border-border">
               <h3 className="font-medium mb-3">{t("git.changesCount", { count: status.unstaged.length + status.staged.length + status.untracked.length })}</h3>
               
               {/* Unstaged */}
@@ -399,41 +400,8 @@ export default function GitPanel({ onClose }: GitPanelProps) {
               )}
             </div>
 
-            {/* Branches Panel */}
-            {showBranches && (
-              <div className="w-64 border-l border-border overflow-auto p-4">
-                <h3 className="font-medium mb-3">{t("git.branches")}</h3>
-                <div className="space-y-1">
-                  {branches
-                    .filter((b) => !b.is_remote)
-                    .map((branch) => (
-                      <div
-                        key={branch.name}
-                        onClick={() => !branch.is_current && handleSwitchBranch(branch.name)}
-                        className={`p-2 rounded cursor-pointer ${
-                          branch.is_current
-                            ? "bg-primary/10 text-primary font-medium"
-                            : "hover:bg-accent"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <GitBranch className="w-4 h-4" />
-                          <span className="text-sm truncate">{branch.name}</span>
-                        </div>
-                        {branch.last_commit_message && (
-                          <p className="text-xs text-muted-foreground mt-1 truncate">
-                            {branch.last_commit_message}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
-
             {/* Commit History */}
-            {!showBranches && (
-              <div className="w-80 border-l border-border overflow-auto p-4">
+            <div className="w-80 overflow-auto p-4">
                 <h3 className="font-medium mb-3 flex items-center gap-2">
                   <History className="w-4 h-4" />
                   {t("git.commitHistory")}
@@ -457,7 +425,6 @@ export default function GitPanel({ onClose }: GitPanelProps) {
                   ))}
                 </div>
               </div>
-            )}
           </div>
         </div>
       </div>
