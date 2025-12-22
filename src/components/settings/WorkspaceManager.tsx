@@ -13,7 +13,8 @@ import {
   RefreshCw,
   Copy,
   Check,
-  ExternalLink
+  ExternalLink,
+  GitBranch
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -26,6 +27,15 @@ interface WorkspaceStats {
   db_size_bytes: number;
   history_count: number;
   execution_count: number;
+}
+
+interface GitSummary {
+  has_git: boolean;
+  current_branch: string | null;
+  remote_url: string | null;
+  changes_count: number;
+  ahead: number;
+  behind: number;
 }
 
 interface RecentProject {
@@ -93,6 +103,7 @@ export default function WorkspaceManager() {
   const { t, i18n } = useTranslation();
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>([]);
   const [workspaceStats, setWorkspaceStats] = useState<Map<string, WorkspaceStats>>(new Map());
+  const [gitSummaries, setGitSummaries] = useState<Map<string, GitSummary>>(new Map());
   const [loading, setLoading] = useState(true);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [selectedWorkspace, setSelectedWorkspace] = useState<{ path: string; name: string } | null>(null);
@@ -105,17 +116,30 @@ export default function WorkspaceManager() {
 
       // Load stats for each project
       const statsMap = new Map<string, WorkspaceStats>();
+      const gitMap = new Map<string, GitSummary>();
+
       for (const project of projects) {
         try {
           const stats = await invoke<WorkspaceStats>("get_workspace_stats", {
             workspacePath: project.path,
           });
           statsMap.set(project.path, stats);
+
+          // Load Git summary
+          try {
+            const gitSummary = await invoke<GitSummary>("get_workspace_git_summary", {
+              workspacePath: project.path,
+            });
+            gitMap.set(project.path, gitSummary);
+          } catch (gitError) {
+            // Git not configured, skip
+          }
         } catch (error) {
           console.error(`Failed to load stats for ${project.path}:`, error);
         }
       }
       setWorkspaceStats(statsMap);
+      setGitSummaries(gitMap);
     } catch (error) {
       console.error("Failed to load recent projects:", error);
     } finally {
@@ -196,10 +220,9 @@ export default function WorkspaceManager() {
   };
 
   const handleCopyPath = async (workspacePath: string) => {
-    const dbPath = getDbPath(workspacePath);
     try {
-      await navigator.clipboard.writeText(dbPath);
-      setCopiedPath(dbPath);
+      await navigator.clipboard.writeText(workspacePath);
+      setCopiedPath(workspacePath);
       setTimeout(() => setCopiedPath(null), 2000);
     } catch (error) {
       console.error("Failed to copy path:", error);
@@ -208,8 +231,7 @@ export default function WorkspaceManager() {
 
   const handleShowInFinder = async (workspacePath: string) => {
     try {
-      const dbPath = getDbPath(workspacePath);
-      await invoke("show_in_folder", { path: dbPath });
+      await invoke("show_in_folder", { path: workspacePath });
     } catch (error) {
       console.error("Failed to show in finder:", error);
     }
@@ -252,6 +274,7 @@ export default function WorkspaceManager() {
       <div className="space-y-4">
         {recentProjects.map((project) => {
           const stats = workspaceStats.get(project.path);
+          const gitSummary = gitSummaries.get(project.path);
 
           return (
             <div
@@ -344,42 +367,57 @@ export default function WorkspaceManager() {
                       </div>
                     </div>
 
-                    {/* Database Location */}
-                    <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-lg border border-border/50">
-                      <Database className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium mb-1.5">{t("workspaceManager.dbLocation")}</div>
-                        <div className="flex items-center gap-2">
-                          <code className="text-xs bg-background/50 px-2 py-1 rounded border border-border flex-1 overflow-x-auto whitespace-nowrap">
-                            {getDbPath(project.path)}
-                          </code>
-                          <button
-                            onClick={() => handleCopyPath(project.path)}
-                            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-md bg-secondary hover:bg-secondary/80 transition-colors flex-shrink-0"
-                            title={t("workspaceManager.copyPath")}
-                          >
-                            {copiedPath === getDbPath(project.path) ? (
-                              <>
-                                <Check className="w-3.5 h-3.5 text-green-500" />
-                                <span className="text-green-500">{t("workspaceManager.pathCopied")}</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-3.5 h-3.5" />
-                                <span>{t("workspaceManager.copyPath")}</span>
-                              </>
-                            )}
-                          </button>
-                          <button
-                            onClick={() => handleShowInFinder(project.path)}
-                            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-md bg-secondary hover:bg-secondary/80 transition-colors flex-shrink-0"
-                            title={t("workspaceManager.showInFinder")}
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                            <span>{t("workspaceManager.showInFinder")}</span>
-                          </button>
+                    {/* Git Info */}
+                    {gitSummary && gitSummary.has_git && (
+                      <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <GitBranch className="w-4 h-4 text-primary" />
+                          <span className="font-medium text-primary">{gitSummary.current_branch || "main"}</span>
+                          {gitSummary.changes_count > 0 && (
+                            <span className="text-yellow-500 text-sm">● {gitSummary.changes_count}</span>
+                          )}
+                          {gitSummary.ahead > 0 && (
+                            <span className="text-blue-500 text-sm">↑ {gitSummary.ahead}</span>
+                          )}
+                          {gitSummary.behind > 0 && (
+                            <span className="text-orange-500 text-sm">↓ {gitSummary.behind}</span>
+                          )}
                         </div>
+                        {gitSummary.remote_url && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {gitSummary.remote_url}
+                          </p>
+                        )}
                       </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 mt-4">
+                      <button
+                        onClick={() => handleCopyPath(project.path)}
+                        className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-md bg-secondary hover:bg-secondary/80 transition-colors"
+                        title={t("workspaceManager.copyPath")}
+                      >
+                        {copiedPath === project.path ? (
+                          <>
+                            <Check className="w-4 h-4 text-green-500" />
+                            <span className="text-green-500">{t("workspaceManager.pathCopied")}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4" />
+                            <span>{t("workspaceManager.copyPath")}</span>
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleShowInFinder(project.path)}
+                        className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-md bg-secondary hover:bg-secondary/80 transition-colors"
+                        title={t("workspaceManager.showInFinder")}
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        <span>{t("workspaceManager.showInFinder")}</span>
+                      </button>
                     </div>
                   </div>
                 ) : (
