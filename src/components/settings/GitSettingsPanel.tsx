@@ -1,39 +1,51 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { GitBranch, Sparkles, Palette, Languages } from "lucide-react";
+import { Sparkles, Palette, Languages } from "lucide-react";
 import { invoke } from "@tauri-apps/api/tauri";
 
-interface LLMProvider {
-  id: string;
-  name: string;
-  provider: string;
-  model: string;
-  enabled: boolean;
+interface EnabledModel {
+  id: string;              // provider_name::model_id
+  model_id: string;
+  model_name: string;      // Display name
+  provider_name: string;   // Provider configuration name
+  provider_type: string;   // Provider type
 }
 
 export default function GitSettingsPanel() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   
   const [commitMessageModel, setCommitMessageModel] = useState("");
   const [commitMessageStyle, setCommitMessageStyle] = useState("conventional");
-  const [commitMessageLanguage, setCommitMessageLanguage] = useState("auto");
-  const [providers, setProviders] = useState<LLMProvider[]>([]);
+  const [models, setModels] = useState<EnabledModel[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadSettings();
-    loadProviders();
+    loadModels();
   }, []);
+
+  // Sync language with app language
+  useEffect(() => {
+    const syncLanguage = async () => {
+      try {
+        await invoke("save_app_setting", { 
+          key: "git.commit_message_language", 
+          value: i18n.language 
+        });
+      } catch (error) {
+        console.error("Failed to sync language:", error);
+      }
+    };
+    syncLanguage();
+  }, [i18n.language]);
 
   const loadSettings = async () => {
     try {
       const model = await invoke<string>("get_app_setting", { key: "git.commit_message_model" }).catch(() => "");
       const style = await invoke<string>("get_app_setting", { key: "git.commit_message_style" }).catch(() => "conventional");
-      const language = await invoke<string>("get_app_setting", { key: "git.commit_message_language" }).catch(() => "auto");
       
       setCommitMessageModel(model);
       setCommitMessageStyle(style);
-      setCommitMessageLanguage(language);
     } catch (error) {
       console.error("Failed to load Git settings:", error);
     } finally {
@@ -41,12 +53,12 @@ export default function GitSettingsPanel() {
     }
   };
 
-  const loadProviders = async () => {
+  const loadModels = async () => {
     try {
-      const providerList = await invoke<LLMProvider[]>("list_llm_providers");
-      setProviders(providerList.filter(p => p.enabled));
+      const modelList = await invoke<EnabledModel[]>("list_enabled_models");
+      setModels(modelList);
     } catch (error) {
-      console.error("Failed to load providers:", error);
+      console.error("Failed to load models:", error);
     }
   };
 
@@ -65,15 +77,6 @@ export default function GitSettingsPanel() {
       await invoke("save_app_setting", { key: "git.commit_message_style", value });
     } catch (error) {
       console.error("Failed to save style setting:", error);
-    }
-  };
-
-  const handleLanguageChange = async (value: string) => {
-    setCommitMessageLanguage(value);
-    try {
-      await invoke("save_app_setting", { key: "git.commit_message_language", value });
-    } catch (error) {
-      console.error("Failed to save language setting:", error);
     }
   };
 
@@ -105,12 +108,12 @@ export default function GitSettingsPanel() {
             <select
               value={commitMessageModel}
               onChange={(e) => handleModelChange(e.target.value)}
-              className="px-3 py-2 bg-secondary rounded-lg border border-border text-sm min-w-[200px]"
+              className="px-3 py-2 bg-secondary rounded-lg border border-border text-sm min-w-[240px]"
             >
               <option value="">Select a model...</option>
-              {providers.map((provider) => (
-                <option key={provider.id} value={provider.name}>
-                  {provider.name}
+              {models.map((model) => (
+                <option key={model.id} value={model.id}>
+                  {model.provider_name} - {model.model_name}
                 </option>
               ))}
             </select>
@@ -130,7 +133,7 @@ export default function GitSettingsPanel() {
             <select
               value={commitMessageStyle}
               onChange={(e) => handleStyleChange(e.target.value)}
-              className="px-3 py-2 bg-secondary rounded-lg border border-border text-sm min-w-[200px]"
+              className="px-3 py-2 bg-secondary rounded-lg border border-border text-sm min-w-[240px]"
             >
               <option value="conventional">{t("git.styleConventional")}</option>
               <option value="detailed">{t("git.styleDetailed")}</option>
@@ -138,26 +141,20 @@ export default function GitSettingsPanel() {
             </select>
           </div>
 
-          {/* Generation Language */}
+          {/* Current Language (Read-only, synced with app) */}
           <div className="flex items-start justify-between py-4 border-b border-border">
             <div className="flex items-start gap-3 flex-1">
               <Languages className="w-5 h-5 mt-0.5 text-muted-foreground" />
               <div>
                 <h4 className="font-medium">{t("git.generationLanguage")}</h4>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Language for generated commit messages
+                  Language for generated commit messages (synced with app language)
                 </p>
               </div>
             </div>
-            <select
-              value={commitMessageLanguage}
-              onChange={(e) => handleLanguageChange(e.target.value)}
-              className="px-3 py-2 bg-secondary rounded-lg border border-border text-sm min-w-[200px]"
-            >
-              <option value="auto">{t("git.languageAuto")}</option>
-              <option value="en">{t("git.languageEnglish")}</option>
-              <option value="zh-CN">{t("git.languageChinese")}</option>
-            </select>
+            <div className="px-3 py-2 bg-secondary/50 rounded-lg border border-border text-sm min-w-[240px] text-muted-foreground">
+              {i18n.language === "zh-CN" ? "简体中文" : i18n.language === "zh-TW" ? "繁體中文" : "English"}
+            </div>
           </div>
         </div>
       </div>
@@ -171,6 +168,7 @@ export default function GitSettingsPanel() {
             <li>• The AI analyzes your git diff and generates an appropriate commit message</li>
             <li>• You can edit the generated message before committing</li>
             <li>• Make sure to configure your LLM providers in the Providers tab first</li>
+            <li>• The language will automatically match your app's language setting</li>
           </ul>
         </div>
       </div>
