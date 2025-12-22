@@ -58,17 +58,6 @@ pub struct GitCommit {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[allow(dead_code)]
-pub struct GitRemoteStatus {
-    pub remote_name: String,
-    pub remote_url: String,
-    pub fetch_url: String,
-    pub push_url: String,
-    pub ahead: usize,
-    pub behind: usize,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PullResult {
     pub success: bool,
     pub message: String,
@@ -81,15 +70,6 @@ pub struct PushResult {
     pub success: bool,
     pub message: String,
     pub commits_pushed: usize,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[allow(dead_code)]
-pub struct GitDiff {
-    pub file_path: String,
-    pub old_content: String,
-    pub new_content: String,
-    pub diff_text: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
