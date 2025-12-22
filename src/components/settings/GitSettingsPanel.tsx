@@ -11,8 +11,6 @@ interface EnabledModel {
   provider_type: string;   // Provider type
 }
 
-type SaveStatus = "idle" | "saving" | "saved";
-
 interface GitSettingsPanelProps {
   onSaveStatusChange?: (status: "saving" | "saved") => void;
 }
