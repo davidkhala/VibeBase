@@ -14,7 +14,7 @@ interface EnabledModel {
 type SaveStatus = "idle" | "saving" | "saved";
 
 export default function GitSettingsPanel() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   
   const [commitMessageModel, setCommitMessageModel] = useState("");
   const [commitMessageStyle, setCommitMessageStyle] = useState("conventional");
