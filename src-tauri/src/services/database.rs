@@ -1,4 +1,3 @@
-use crate::models::execution::ExecutionResult;
 use rusqlite::{Connection, Result, params};
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -165,8 +164,6 @@ pub struct LLMProviderConfig {
 /// Stores file metadata, execution history, evaluation results
 pub struct ProjectDatabase {
     conn: Connection,
-    #[allow(dead_code)]
-    workspace_path: PathBuf,
 }
 
 impl ProjectDatabase {
@@ -180,10 +177,7 @@ impl ProjectDatabase {
         // Initialize schema
         conn.execute_batch(include_str!("../sql/project_schema.sql"))?;
 
-        Ok(Self {
-            conn,
-            workspace_path: workspace_path.to_path_buf(),
-        })
+        Ok(Self { conn })
     }
 
     pub fn get_connection(&self) -> &Connection {
@@ -395,64 +389,8 @@ impl ProjectDatabase {
         files.collect()
     }
 
-    #[allow(dead_code)]
-    pub fn save_execution(&self, result: &ExecutionResult, prompt_file_id: &str, provider_name: &str) -> Result<()> {
-        self.conn.execute(
-            "INSERT INTO execution_history (
-                id, prompt_file_id, prompt_name, llm_provider_name,
-                input_variables, output,
-                model, provider, latency_ms, tokens_input, tokens_output, cost_usd,
-                timestamp, git_commit, git_branch
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
-            params![
-                result.id,
-                prompt_file_id,
-                "",  // prompt_name will be added
-                provider_name,
-                None::<String>,  // input_variables as JSON
-                result.output,
-                result.metadata.model,
-                result.metadata.provider,
-                result.metadata.latency_ms,
-                result.metadata.tokens_input,
-                result.metadata.tokens_output,
-                result.metadata.cost_usd,
-                result.metadata.timestamp,
-                None::<String>,  // git_commit
-                None::<String>,  // git_branch
-            ],
-        )?;
-
-        Ok(())
-    }
-
-    #[allow(dead_code)]
-    pub fn get_recent_executions(&self, limit: usize) -> Result<Vec<ExecutionResult>> {
-        let mut stmt = self.conn.prepare(
-            "SELECT id, output, model, provider, latency_ms, tokens_input, tokens_output, cost_usd, timestamp
-             FROM execution_history
-             ORDER BY timestamp DESC
-             LIMIT ?1"
-        )?;
-
-        let results = stmt.query_map([limit], |row| {
-            Ok(ExecutionResult {
-                id: row.get(0)?,
-                output: row.get(1)?,
-                metadata: crate::models::execution::ExecutionMetadata {
-                    model: row.get(2)?,
-                    provider: row.get(3)?,
-                    latency_ms: row.get(4)?,
-                    tokens_input: row.get(5)?,
-                    tokens_output: row.get(6)?,
-                    cost_usd: row.get(7)?,
-                    timestamp: row.get(8)?,
-                },
-            })
-        })?;
-
-        results.collect()
-    }
+    // Note: Execution history methods (save_execution, get_recent_executions) 
+    // are not currently used but kept for future implementation.
 
     /// Save file history if content has changed
     /// Returns true if a new history entry was created, false if content unchanged
