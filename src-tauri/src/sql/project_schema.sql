@@ -201,4 +201,43 @@ VALUES ('1.1.0', strftime('%s', 'now'), 'Add file_history table for version cont
 INSERT OR IGNORE INTO schema_migrations (version, applied_at, description)
 VALUES ('1.2.0', strftime('%s', 'now'), 'Replace comparison_results with arena_battles table for multi-model support');
 
+-- Git Configuration (Project-level)
+CREATE TABLE IF NOT EXISTS git_config (
+    id TEXT PRIMARY KEY DEFAULT 'default',
+    
+    -- Repository Info
+    repository_path TEXT,
+    current_branch TEXT,
+    
+    -- Authentication
+    auth_method TEXT,  -- 'ssh' | 'token' | 'none'
+    ssh_key_path TEXT,
+    
+    -- Keychain References (not storing actual sensitive data)
+    ssh_passphrase_key TEXT,  -- Keychain key: "git:ssh_passphrase:{workspace_id}"
+    github_token_key TEXT,     -- Keychain key: "git:token:{workspace_id}"
+    
+    -- User Info (can be plaintext)
+    git_user_name TEXT,
+    git_user_email TEXT,
+    
+    -- Remote Repository
+    remote_name TEXT DEFAULT 'origin',
+    remote_url TEXT,
+    
+    -- Status
+    is_configured INTEGER DEFAULT 0,
+    last_fetch INTEGER,
+    
+    -- Timestamps
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+-- Security: Sensitive data (SSH passphrase and tokens) stored in system Keychain
+-- Database only stores Keychain reference keys
+
+INSERT OR IGNORE INTO schema_migrations (version, applied_at, description)
+VALUES ('1.3.0', strftime('%s', 'now'), 'Add git_config table for Git integration');
+
 
