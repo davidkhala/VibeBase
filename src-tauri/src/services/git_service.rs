@@ -21,10 +21,10 @@ impl GitService {
     pub fn init_repository(&self) -> Result<Repository> {
         let repo_path = Path::new(&self.workspace_path);
         
-        if let Ok(repo) = Repository::open(repo_path) {
-            Ok(repo)
-        } else {
-            Err(anyhow!("Git repository not found. Please initialize git in this directory first."))
+        // Try to discover git repository (searches parent directories)
+        match Repository::discover(repo_path) {
+            Ok(repo) => Ok(repo),
+            Err(_) => Err(anyhow!("Git repository not found. Please initialize git in this directory first.")),
         }
     }
 
@@ -289,7 +289,7 @@ impl GitService {
         
         // Fetch
         let mut remote = repo.find_remote(config.remote_name.as_deref().unwrap_or("origin"))?;
-        let mut callbacks = self.get_remote_callbacks(&config)?;
+        let callbacks = self.get_remote_callbacks(&config)?;
         let mut fetch_options = FetchOptions::new();
         fetch_options.remote_callbacks(callbacks);
         
@@ -341,7 +341,7 @@ impl GitService {
         let config = self.load_config()?;
         
         let mut remote = repo.find_remote(config.remote_name.as_deref().unwrap_or("origin"))?;
-        let mut callbacks = self.get_remote_callbacks(&config)?;
+        let callbacks = self.get_remote_callbacks(&config)?;
         let mut push_options = PushOptions::new();
         push_options.remote_callbacks(callbacks);
         
