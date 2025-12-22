@@ -216,10 +216,6 @@ export default function WorkspaceManager() {
     });
   };
 
-  const getDbPath = (workspacePath: string): string => {
-    return `${workspacePath}/.vibebase/project.db`;
-  };
-
   const handleCopyPath = async (workspacePath: string) => {
     try {
       await navigator.clipboard.writeText(workspacePath);
