@@ -14,6 +14,10 @@ pub async fn fetch_provider_models(
     api_key: String,
     base_url: Option<String>,
 ) -> Result<Vec<ModelInfo>, String> {
+    println!("🔍 [fetch_provider_models] Provider: {}", provider);
+    println!("🔍 [fetch_provider_models] API key length: {}", api_key.len());
+    println!("🔍 [fetch_provider_models] Base URL: {:?}", base_url);
+    
     match provider.as_str() {
         "openrouter" => fetch_openrouter_models(api_key, base_url).await,
         "openai" => fetch_openai_models(api_key, base_url).await,
@@ -21,6 +25,7 @@ pub async fn fetch_provider_models(
         "aihubmix" => fetch_aihubmix_models(api_key, base_url).await,
         "deepseek" => fetch_deepseek_models(api_key, base_url).await,
         "ollama" => fetch_ollama_models(base_url).await,
+        "custom" => fetch_custom_provider_models(api_key, base_url).await,
         _ => Err(format!("Provider '{}' model fetching not yet implemented", provider)),
     }
 }
@@ -64,7 +69,11 @@ async fn fetch_openrouter_models(api_key: String, base_url: Option<String>) -> R
 }
 
 async fn fetch_openai_models(api_key: String, base_url: Option<String>) -> Result<Vec<ModelInfo>, String> {
+    let is_custom_url = base_url.is_some();
     let url = format!("{}/models", base_url.unwrap_or_else(|| "https://api.openai.com/v1".to_string()));
+    
+    println!("🔍 [fetch_openai_models] Fetching from URL: {}", url);
+    println!("🔍 [fetch_openai_models] Is custom URL: {}", is_custom_url);
     
     let client = reqwest::Client::new();
     let response = client
@@ -74,8 +83,13 @@ async fn fetch_openai_models(api_key: String, base_url: Option<String>) -> Resul
         .await
         .map_err(|e| format!("Request failed: {}", e))?;
 
-    if !response.status().is_success() {
-        return Err(format!("API returned status: {}", response.status()));
+    let status = response.status();
+    println!("🔍 [fetch_openai_models] Response status: {}", status);
+
+    if !status.is_success() {
+        let error_text = response.text().await.unwrap_or_default();
+        println!("❌ [fetch_openai_models] API error: {}", error_text);
+        return Err(format!("API returned status: {} - {}", status, error_text));
     }
 
     #[derive(Deserialize)]
@@ -88,20 +102,40 @@ async fn fetch_openai_models(api_key: String, base_url: Option<String>) -> Resul
         id: String,
     }
 
-    let data: OpenAIResponse = response
-        .json()
-        .await
-        .map_err(|e| format!("Failed to parse response: {}", e))?;
+    let response_text = response.text().await.map_err(|e| format!("Failed to read response: {}", e))?;
+    println!("🔍 [fetch_openai_models] Response body (first 500 chars): {}", &response_text.chars().take(500).collect::<String>());
 
-    // Filter to only include GPT models
-    Ok(data.data.into_iter()
-        .filter(|m| m.id.starts_with("gpt-") || m.id.starts_with("o1"))
-        .map(|m| ModelInfo {
-            id: m.id.clone(),
-            name: m.id,
-            description: None,
-        })
-        .collect())
+    let data: OpenAIResponse = serde_json::from_str(&response_text)
+        .map_err(|e| format!("Failed to parse response: {} - Response: {}", e, &response_text.chars().take(200).collect::<String>()))?;
+
+    println!("✅ [fetch_openai_models] Successfully parsed {} models", data.data.len());
+
+    // Only filter for GPT models if using official OpenAI API
+    // For custom base URLs, return all models
+    let filtered: Vec<ModelInfo> = if is_custom_url {
+        println!("🔍 [fetch_openai_models] Custom URL detected, returning all models");
+        data.data.into_iter()
+            .map(|m| ModelInfo {
+                id: m.id.clone(),
+                name: m.id,
+                description: None,
+            })
+            .collect()
+    } else {
+        println!("🔍 [fetch_openai_models] Official OpenAI URL, filtering GPT models only");
+        data.data.into_iter()
+            .filter(|m| m.id.starts_with("gpt-") || m.id.starts_with("o1"))
+            .map(|m| ModelInfo {
+                id: m.id.clone(),
+                name: m.id,
+                description: None,
+            })
+            .collect()
+    };
+
+    println!("✅ [fetch_openai_models] Returning {} models", filtered.len());
+
+    Ok(filtered)
 }
 
 async fn fetch_anthropic_models(_api_key: String, _base_url: Option<String>) -> Result<Vec<ModelInfo>, String> {
@@ -138,6 +172,7 @@ pub async fn test_provider_connection(
         "aihubmix" => test_aihubmix_connection(api_key, base_url).await,
         "deepseek" => test_deepseek_connection(api_key, base_url).await,
         "ollama" => test_ollama_connection(base_url).await,
+        "custom" => test_custom_provider_connection(api_key, base_url).await,
         _ => Err(format!("Provider '{}' connection test not yet implemented", provider)),
     }
 }
@@ -230,7 +265,7 @@ async fn fetch_aihubmix_models(api_key: String, base_url: Option<String>) -> Res
 
 async fn fetch_deepseek_models(api_key: String, base_url: Option<String>) -> Result<Vec<ModelInfo>, String> {
     // DeepSeek uses OpenAI-compatible interface
-    let url = format!("{}/models", base_url.unwrap_or_else(|| "https://api.deepseek.com/v1".to_string()));
+    let url = format!("{}/models", base_url.unwrap_or_else(|| "https://api.deepseek.com".to_string()));
     
     let client = reqwest::Client::new();
     let response = client
@@ -323,7 +358,7 @@ async fn test_aihubmix_connection(api_key: String, base_url: Option<String>) -> 
 }
 
 async fn test_deepseek_connection(api_key: String, base_url: Option<String>) -> Result<String, String> {
-    let url = format!("{}/models", base_url.unwrap_or_else(|| "https://api.deepseek.com/v1".to_string()));
+    let url = format!("{}/models", base_url.unwrap_or_else(|| "https://api.deepseek.com".to_string()));
     
     let client = reqwest::Client::new();
     let response = client
@@ -359,9 +394,79 @@ async fn test_ollama_connection(base_url: Option<String>) -> Result<String, Stri
     }
 }
 
+async fn fetch_custom_provider_models(api_key: String, base_url: Option<String>) -> Result<Vec<ModelInfo>, String> {
+    let base = base_url.ok_or("Custom provider requires base_url")?;
+    let url = format!("{}/models", base);
+    
+    println!("🔍 [fetch_custom_provider_models] Fetching from URL: {}", url);
+    
+    let client = reqwest::Client::new();
+    let response = client
+        .get(&url)
+        .header("Authorization", format!("Bearer {}", api_key))
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {}", e))?;
 
+    let status = response.status();
+    println!("🔍 [fetch_custom_provider_models] Response status: {}", status);
 
+    if !status.is_success() {
+        let error_text = response.text().await.unwrap_or_default();
+        println!("❌ [fetch_custom_provider_models] API error: {}", error_text);
+        return Err(format!("API returned status: {} - {}", status, error_text));
+    }
 
+    #[derive(Deserialize)]
+    struct OpenAIResponse {
+        data: Vec<OpenAIModel>,
+    }
+
+    #[derive(Deserialize)]
+    struct OpenAIModel {
+        id: String,
+    }
+
+    let response_text = response.text().await.map_err(|e| format!("Failed to read response: {}", e))?;
+    println!("🔍 [fetch_custom_provider_models] Response body (first 500 chars): {}", &response_text.chars().take(500).collect::<String>());
+
+    let data: OpenAIResponse = serde_json::from_str(&response_text)
+        .map_err(|e| format!("Failed to parse response: {} - Response: {}", e, &response_text.chars().take(200).collect::<String>()))?;
+
+    println!("✅ [fetch_custom_provider_models] Successfully parsed {} models", data.data.len());
+
+    // Return all models without filtering for custom providers
+    let models: Vec<ModelInfo> = data.data.into_iter()
+        .map(|m| ModelInfo {
+            id: m.id.clone(),
+            name: m.id,
+            description: None,
+        })
+        .collect();
+
+    println!("✅ [fetch_custom_provider_models] Returning {} models", models.len());
+
+    Ok(models)
+}
+
+async fn test_custom_provider_connection(api_key: String, base_url: Option<String>) -> Result<String, String> {
+    let base = base_url.ok_or("Custom provider requires base_url")?;
+    let url = format!("{}/models", base);
+    
+    let client = reqwest::Client::new();
+    let response = client
+        .get(&url)
+        .header("Authorization", format!("Bearer {}", api_key))
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {}", e))?;
+
+    if response.status().is_success() {
+        Ok("Connection successful".to_string())
+    } else {
+        Err(format!("Connection failed: {}", response.status()))
+    }
+}
 
 
 
