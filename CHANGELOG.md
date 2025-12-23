@@ -5,6 +5,27 @@ All notable changes to VibeBase will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.10] - 2025-12-23
+
+### Added
+- **Global Search Feature**: Added comprehensive search functionality in the header toolbar
+  - Search across file names, file paths, file content, tags, and history versions
+  - Real-time search with 300ms debounce for optimal performance
+  - Dropdown search results panel with detailed match information
+  - Visual indicators showing match types (content, tags, history)
+  - Content snippet preview for matched file content
+  - Click to open files directly from search results
+  - Full internationalization support (Simplified Chinese, Traditional Chinese, English)
+
+### Improved
+- Enhanced search experience with categorized results display
+- Search results show match counts for each category (content, tags, history)
+- Added color-coded badges for different match types (green for content, blue for tags, amber for history)
+
+### Changed
+- Removed unused search code from Navigator component for better code maintainability
+- All code comments and logs now use English for international development standards
+
 ## [0.1.9] - 2025-12-23
 
 ### Added
