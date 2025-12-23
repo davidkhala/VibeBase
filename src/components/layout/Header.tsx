@@ -1,10 +1,11 @@
 import { useTranslation } from "react-i18next";
 import { useThemeStore } from "../../stores/themeStore";
-import { useWorkspaceStore, Workspace } from "../../stores/workspaceStore";
-import { Moon, Sun, Monitor, FolderOpen, Languages, Settings as SettingsIcon, Layers, ChevronDown, History, BarChart3 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useWorkspaceStore, Workspace, FileNode } from "../../stores/workspaceStore";
+import { Moon, Sun, Monitor, FolderOpen, Languages, Settings as SettingsIcon, Layers, ChevronDown, History, BarChart3, Search, X } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { open } from "@tauri-apps/api/dialog";
+import { useEditorStore } from "../../stores/editorStore";
 
 interface RecentProject {
   id: string;
@@ -18,10 +19,24 @@ export default function Header() {
   const { t, i18n } = useTranslation();
   const { theme, setTheme } = useThemeStore();
   const { workspace, setWorkspace } = useWorkspaceStore();
+  const { setCurrentFile, setContent, setDirty } = useEditorStore();
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false);
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<{
+    files: Set<string>;
+    tags: Map<string, string[]>;
+    history: Map<string, any[]>;
+    content: Map<string, string>;
+  }>({
+    files: new Set(),
+    tags: new Map(),
+    history: new Map(),
+    content: new Map(),
+  });
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   useEffect(() => {
     loadRecentProjects();
@@ -141,6 +156,147 @@ export default function Header() {
     }
   };
 
+  // Search functionality
+  useEffect(() => {
+    if (!searchQuery.trim() || !workspace) {
+      setSearchResults({
+        files: new Set(),
+        tags: new Map(),
+        history: new Map(),
+        content: new Map(),
+      });
+      return;
+    }
+
+    const performSearch = async () => {
+      const query = searchQuery.toLowerCase();
+      const matchedFiles = new Set<string>();
+      const matchedTags = new Map<string, string[]>();
+      const matchedHistory = new Map<string, any[]>();
+      const matchedContent = new Map<string, string>();
+
+      // Search in file tree (file names and paths)
+      const searchInTree = (node: FileNode) => {
+        if (node.type === "file") {
+          const fileName = node.name.toLowerCase();
+          const filePath = node.path.toLowerCase();
+          if (fileName.includes(query) || filePath.includes(query)) {
+            matchedFiles.add(node.path);
+          }
+        } else if (node.type === "folder") {
+          node.children.forEach(searchInTree);
+        }
+      };
+
+      if (workspace.file_tree.type === "folder") {
+        workspace.file_tree.children.forEach(searchInTree);
+      }
+
+      // Search in file content, tags and history for each file
+      const allFiles: string[] = [];
+      const collectFiles = (node: FileNode) => {
+        if (node.type === "file") {
+          allFiles.push(node.path);
+        } else if (node.type === "folder") {
+          node.children.forEach(collectFiles);
+        }
+      };
+
+      if (workspace.file_tree.type === "folder") {
+        workspace.file_tree.children.forEach(collectFiles);
+      }
+
+      // Search file content, tags and history for each file
+      for (const filePath of allFiles) {
+        try {
+          // Search in file content
+          const fileContent = await invoke<string>("read_prompt", {
+            filePath: filePath,
+          });
+
+          if (fileContent.toLowerCase().includes(query)) {
+            matchedFiles.add(filePath);
+            // Extract a snippet around the match
+            const lowerContent = fileContent.toLowerCase();
+            const matchIndex = lowerContent.indexOf(query);
+            const start = Math.max(0, matchIndex - 50);
+            const end = Math.min(fileContent.length, matchIndex + query.length + 50);
+            let snippet = fileContent.substring(start, end);
+            if (start > 0) snippet = "..." + snippet;
+            if (end < fileContent.length) snippet = snippet + "...";
+            matchedContent.set(filePath, snippet);
+          }
+
+          // Search in tags
+          const metadata = await invoke<any>("get_prompt_metadata", {
+            workspacePath: workspace.path,
+            filePath: filePath,
+          });
+
+          if (metadata.tags) {
+            const tags = JSON.parse(metadata.tags) as string[];
+            const matchingTags = tags.filter((tag: string) =>
+              tag.toLowerCase().includes(query)
+            );
+            if (matchingTags.length > 0) {
+              matchedFiles.add(filePath);
+              matchedTags.set(filePath, matchingTags);
+            }
+          }
+
+          // Search in history
+          const history = await invoke<any[]>("get_file_history", {
+            workspacePath: workspace.path,
+            filePath: filePath,
+            limit: 50,
+          });
+
+          const matchingHistory = history.filter(
+            (entry: any) =>
+              entry.preview?.toLowerCase().includes(query) ||
+              entry.content_hash?.toLowerCase().includes(query)
+          );
+
+          if (matchingHistory.length > 0) {
+            matchedFiles.add(filePath);
+            matchedHistory.set(filePath, matchingHistory);
+          }
+        } catch (error) {
+          // Ignore errors for individual files
+          console.debug("Search error for file:", filePath, error);
+        }
+      }
+
+      setSearchResults({
+        files: matchedFiles,
+        tags: matchedTags,
+        history: matchedHistory,
+        content: matchedContent,
+      });
+    };
+
+    // Debounce search
+    const timeoutId = setTimeout(performSearch, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, workspace]);
+
+  const handleFileClick = async (filePath: string) => {
+    try {
+      const fileContent = await invoke<string>("read_prompt", {
+        filePath: filePath,
+      });
+
+      setCurrentFile(filePath);
+      setContent(fileContent);
+      setDirty(false);
+      setShowSearchResults(false);
+      setSearchQuery("");
+    } catch (error) {
+      console.error("Failed to open file:", error);
+      alert(`Failed to open file: ${error}`);
+    }
+  };
+
   return (
     <header className="h-12 border-b border-border flex items-center px-4 bg-card">
       <div className="flex items-center gap-4 flex-1">
@@ -211,6 +367,137 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-2">
+        {/* Search Box */}
+        {workspace && (
+          <div className="relative">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setShowSearchResults(true)}
+                placeholder={t("workspace.searchPrompts", "搜索文件、标签、历史...")}
+                className="w-64 pl-8 pr-8 py-1.5 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setShowSearchResults(false);
+                  }}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-0.5 hover:bg-accent rounded transition-colors"
+                  title={t("actions.clearSearch")}
+                >
+                  <X className="w-3.5 h-3.5 text-muted-foreground" />
+                </button>
+              )}
+            </div>
+
+            {/* Search Results Dropdown */}
+            {showSearchResults && searchQuery && (
+              <>
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setShowSearchResults(false)}
+                />
+                <div className="absolute right-0 mt-2 w-96 bg-popover border border-border rounded-md shadow-lg z-20 max-h-96 overflow-auto">
+                  <div className="p-3 border-b border-border">
+                    <div className="text-xs text-muted-foreground">
+                      {searchResults.files.size > 0 ? (
+                        <div className="space-y-1">
+                          <div className="font-medium">
+                            {t("workspace.searchResults", "找到 {{count}} 个结果", { count: searchResults.files.size })}
+                          </div>
+                          {searchResults.content.size > 0 && (
+                            <div className="text-green-600">
+                              · {searchResults.content.size} {t("workspace.matchedContent", "个文件匹配内容")}
+                            </div>
+                          )}
+                          {searchResults.tags.size > 0 && (
+                            <div className="text-primary">
+                              · {searchResults.tags.size} {t("workspace.matchedTags", "个文件匹配标签")}
+                            </div>
+                          )}
+                          {searchResults.history.size > 0 && (
+                            <div className="text-amber-600">
+                              · {searchResults.history.size} {t("workspace.matchedHistory", "个文件匹配历史")}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div>{t("workspace.noSearchResults", "未找到匹配结果")}</div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {searchResults.files.size > 0 && (
+                    <div className="py-1">
+                      {Array.from(searchResults.files).map((filePath) => {
+                        const fileName = filePath.split("/").pop()?.replace('.vibe.md', '') || filePath;
+                        const matchedTags = searchResults.tags.get(filePath);
+                        const matchedHistoryCount = searchResults.history.get(filePath)?.length || 0;
+                        const matchedContentSnippet = searchResults.content.get(filePath);
+                        
+                        return (
+                          <button
+                            key={filePath}
+                            onClick={() => handleFileClick(filePath)}
+                            className="w-full px-4 py-2 text-left hover:bg-accent transition-colors"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-foreground truncate">
+                                {fileName}
+                              </span>
+                              <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                                {matchedContentSnippet && (
+                                  <span className="text-xs px-1.5 py-0.5 bg-green-500/10 text-green-600 rounded">
+                                    {t("workspace.contentLabel", "内容")}
+                                  </span>
+                                )}
+                                {matchedTags && matchedTags.length > 0 && (
+                                  <span className="text-xs px-1.5 py-0.5 bg-primary/10 text-primary rounded">
+                                    {matchedTags.length} {t("workspace.tagsLabel", "标签")}
+                                  </span>
+                                )}
+                                {matchedHistoryCount > 0 && (
+                                  <span className="text-xs px-1.5 py-0.5 bg-amber-500/10 text-amber-600 rounded">
+                                    {matchedHistoryCount} {t("workspace.historyLabel", "历史")}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate mt-0.5">
+                              {filePath}
+                            </div>
+                            {matchedContentSnippet && (
+                              <div className="text-xs text-muted-foreground mt-1 line-clamp-2 bg-green-500/5 px-2 py-1 rounded">
+                                {matchedContentSnippet}
+                              </div>
+                            )}
+                            {matchedTags && matchedTags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {matchedTags.map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="text-xs px-1.5 py-0.5 bg-primary/10 text-primary rounded"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {/* Variables Manager */}
         <button
           onClick={openVariablesWindow}
