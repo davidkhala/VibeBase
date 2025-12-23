@@ -45,6 +45,10 @@
     "error_starts_with_dot": "名称不能以点号开头",
     "error_already_exists": "该名称已存在"
   },
+  "console": {
+    "noLogs": "暂无日志",
+    "clear": "清除"
+  },
   "layout": {
     "navigator": "导航器",
     "canvas": "编辑区",

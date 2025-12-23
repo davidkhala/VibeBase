@@ -45,6 +45,10 @@
     "error_starts_with_dot": "Name cannot start with a dot",
     "error_already_exists": "Name already exists"
   },
+  "console": {
+    "noLogs": "No logs yet",
+    "clear": "Clear"
+  },
   "layout": {
     "navigator": "Navigator",
     "canvas": "Canvas",
