@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 
@@ -7,11 +7,13 @@ interface CustomProviderDialogProps {
   onClose: () => void;
   onConfirm: (provider: CustomProviderData) => void;
   existingProviders: string[];
+  builtinProviderIds: string[];
+  builtinProviderNames: string[];
+  editingProvider?: CustomProviderData | null;
 }
 
 export interface CustomProviderData {
   name: string;
-  displayName: string;
   baseUrl: string;
   description: string;
 }
@@ -21,25 +23,37 @@ export default function CustomProviderDialog({
   onClose,
   onConfirm,
   existingProviders,
+  builtinProviderIds,
+  builtinProviderNames,
+  editingProvider = null,
 }: CustomProviderDialogProps) {
   const { t } = useTranslation();
   const [name, setName] = useState("");
-  const [displayName, setDisplayName] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
 
+  // Initialize form with editing data
+  useEffect(() => {
+    if (isOpen && editingProvider) {
+      setName(editingProvider.name);
+      setBaseUrl(editingProvider.baseUrl);
+      setDescription(editingProvider.description);
+    } else if (isOpen && !editingProvider) {
+      // Reset form for new provider
+      setName("");
+      setBaseUrl("");
+      setDescription("");
+      setError("");
+    }
+  }, [isOpen, editingProvider]);
+
   if (!isOpen) return null;
 
   const handleConfirm = () => {
-    // 验证
+    // Validation
     if (!name.trim()) {
       setError(t("providers.customNameRequired"));
-      return;
-    }
-
-    if (!displayName.trim()) {
-      setError(t("providers.customDisplayNameRequired"));
       return;
     }
 
@@ -56,20 +70,41 @@ export default function CustomProviderDialog({
       return;
     }
 
-    // Check for duplicate names (case-insensitive)
     const lowerName = name.toLowerCase();
-    if (existingProviders.some(p => p.toLowerCase() === lowerName)) {
+
+    // Check if conflicts with builtin provider IDs
+    if (builtinProviderIds.some(id => id.toLowerCase() === lowerName)) {
+      setError(t("providers.customNameConflictsWithBuiltin", "名称与内置提供商冲突，请使用其他名称"));
+      return;
+    }
+
+    // Check if conflicts with builtin provider names
+    if (builtinProviderNames.some(builtinName => builtinName.toLowerCase() === lowerName)) {
+      setError(t("providers.customNameConflictsWithBuiltin", "名称与内置提供商冲突，请使用其他名称"));
+      return;
+    }
+
+    // Check for duplicate names (case-insensitive) - skip check if editing the same provider
+    const isDuplicate = existingProviders.some(p => {
+      const existingLower = p.toLowerCase();
+      // Allow same name if we're editing this provider
+      if (editingProvider && existingLower === editingProvider.name.toLowerCase()) {
+        return false;
+      }
+      return existingLower === lowerName;
+    });
+    
+    if (isDuplicate) {
       setError(t("providers.customNameExists"));
       return;
     }
 
-    onConfirm({ name: name.trim(), displayName: displayName.trim(), baseUrl: baseUrl.trim(), description: description.trim() });
+    onConfirm({ name: name.trim(), baseUrl: baseUrl.trim(), description: description.trim() });
     handleClose();
   };
 
   const handleClose = () => {
     setName("");
-    setDisplayName("");
     setBaseUrl("");
     setDescription("");
     setError("");
@@ -80,7 +115,9 @@ export default function CustomProviderDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-card border border-border rounded-lg shadow-lg w-full max-w-md mx-4">
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <h3 className="text-lg font-semibold">{t("providers.addCustomProvider")}</h3>
+          <h3 className="text-lg font-semibold">
+            {editingProvider ? t("providers.editCustomProvider", "编辑自定义提供商") : t("providers.addCustomProvider")}
+          </h3>
           <button
             onClick={handleClose}
             className="p-1 hover:bg-accent rounded-md transition-colors"
@@ -90,7 +127,7 @@ export default function CustomProviderDialog({
         </div>
 
         <div className="p-4 space-y-4">
-          {/* Provider ID (Internal Name) */}
+          {/* Provider Name */}
           <div>
             <label className="block text-sm font-medium mb-1.5">
               {t("providers.customName")}
@@ -103,32 +140,11 @@ export default function CustomProviderDialog({
                 setName(e.target.value);
                 setError("");
               }}
-              placeholder="custom-provider"
-              className="w-full px-3 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <p className="mt-1 text-xs text-muted-foreground">
-              {t("providers.customNameHint")}
-            </p>
-          </div>
-
-          {/* Display Name */}
-          <div>
-            <label className="block text-sm font-medium mb-1.5">
-              {t("providers.customDisplayName")}
-              <span className="text-destructive ml-1">*</span>
-            </label>
-            <input
-              type="text"
-              value={displayName}
-              onChange={(e) => {
-                setDisplayName(e.target.value);
-                setError("");
-              }}
               placeholder="My Custom Provider"
               className="w-full px-3 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
             />
             <p className="mt-1 text-xs text-muted-foreground">
-              {t("providers.customDisplayNameHint")}
+              {t("providers.customNameHint")}
             </p>
           </div>
 
