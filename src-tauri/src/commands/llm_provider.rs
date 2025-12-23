@@ -258,8 +258,8 @@ pub fn list_enabled_models(state: State<LLMProviderState>) -> Result<Vec<Enabled
             match serde_json::from_str::<Vec<String>>(models_json) {
                 Ok(model_ids) => {
                     for model_id in model_ids {
-                        // 从 model_id 中提取模型名称
-                        // 格式可能是：anthropic/claude-3.7-sonnet:thinking 或 gpt-4o
+                        // Extract model name from model_id
+                        // Format could be: anthropic/claude-3.7-sonnet:thinking or gpt-4o
                         let model_name = model_id.split('/').last().unwrap_or(&model_id).to_string();
                         
                         enabled_models.push(EnabledModel {
