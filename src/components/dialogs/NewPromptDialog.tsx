@@ -3,6 +3,7 @@ import { X, FileCode } from "lucide-react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { useWorkspaceStore } from "../../stores/workspaceStore";
 import { useEditorStore } from "../../stores/editorStore";
+import { useConsoleStore } from "../../stores/consoleStore";
 
 interface NewPromptDialogProps {
   parentPath: string;
@@ -17,6 +18,7 @@ export default function NewPromptDialog({
 }: NewPromptDialogProps) {
   const { workspace } = useWorkspaceStore();
   const { setCurrentFile, setContent, setDirty } = useEditorStore();
+  const { addLog } = useConsoleStore();
   const [fileName, setFileName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,6 +70,8 @@ export default function NewPromptDialog({
         relativePath: relativePath,
       });
 
+      addLog("CREATE", `File created: ${filePath}`);
+
       // Read the created file
       const content = await invoke<string>("read_prompt", {
         filePath: filePath,
@@ -82,6 +86,9 @@ export default function NewPromptDialog({
       onSuccess();
       onClose();
     } catch (err) {
+      // Calculate full path for error message
+      const fullPath = parentPath ? `${parentPath}/${fullFileName}` : fullFileName;
+      addLog("ERROR", `Create failed: ${fullPath} - ${err}`);
       setError(String(err));
     } finally {
       setIsCreating(false);
