@@ -5,12 +5,27 @@ All notable changes to VibeBase will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.9] - 2025-12-23
+
+### Added
+- **Enhanced cross-platform system theme detection**: Implemented native system theme detection for Windows using registry (winreg) and Linux using gsettings/GTK_THEME
+- Added `winreg` dependency for Windows platform to access registry settings
+
+### Changed
+- Refactored window command functions to be async for better consistency and performance
+- Improved `get_system_theme` command to support all major platforms (macOS, Windows, Linux)
+
+### Fixed
+- Minor package.json configuration fixes
+
 ## [0.1.8] - 2025-12-23
 
 ### Added
 - Console UI now uses Eraser icon instead of X icon for clear button to avoid confusion with close button
 - History operations now logged to console (history save and history apply)
 - File operations now show full absolute paths in console logs instead of just filenames
+- **Windows native theme detection**: Now reads Windows registry to detect system dark/light mode
+- **Linux theme detection**: Checks GTK_THEME environment variable for theme preference
 
 ### Changed
 - Improved console log messages to display complete file paths for better traceability
@@ -21,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Console UI/UX: Clear button now visually distinct from window close button
 - Better debugging experience with full path information in logs
 - More informative log messages for file history operations
+- **Windows 10/11 compatibility**: Native system theme detection via registry (AppsUseLightTheme)
+- **Cross-platform theme detection**: All platforms now have native or environment-based detection
 
 ## [0.1.7] - 2025-12-23
 
