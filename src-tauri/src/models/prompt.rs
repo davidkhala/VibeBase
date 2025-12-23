@@ -67,6 +67,8 @@ pub enum Provider {
     AiHubMix,
     #[serde(rename = "github")]
     GitHub,
+    #[serde(rename = "custom")]
+    Custom,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
