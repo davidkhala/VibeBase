@@ -317,7 +317,11 @@
     "deleteModelConfirm": "確定要刪除此模型嗎？",
     "save": "儲存",
     "saved": "設定儲存成功",
-    "saveFailed": "儲存失敗"
+    "saveFailed": "儲存失敗",
+    "ollamaInfo": "Ollama 是本地 LLM 服務，不需要 API Key。請確保 Ollama 正在運行。",
+    "ollamaDefaultUrl": "預設位址: http://localhost:11434",
+    "ollamaBaseUrlDesc": "Ollama 服務位址，支援區域網路位址（如 http://192.168.1.100:11434）",
+    "baseUrl": "Base URL"
   },
   "workspaceManager": {
     "title": "工作區管理",

@@ -317,7 +317,11 @@
     "deleteModelConfirm": "Delete this model?",
     "save": "Save",
     "saved": "Settings saved successfully",
-    "saveFailed": "Failed to save settings"
+    "saveFailed": "Failed to save settings",
+    "ollamaInfo": "Ollama is a local LLM service and doesn't require an API Key. Please make sure Ollama is running.",
+    "ollamaDefaultUrl": "Default URL: http://localhost:11434",
+    "ollamaBaseUrlDesc": "Ollama service URL, supports LAN addresses (e.g., http://192.168.1.100:11434)",
+    "baseUrl": "Base URL"
   },
   "workspaceManager": {
     "title": "Workspace Management",

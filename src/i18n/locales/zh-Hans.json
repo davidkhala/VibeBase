@@ -317,7 +317,11 @@
     "deleteConfirm": "确定要删除此提供商配置吗？",
     "save": "保存",
     "saved": "设置保存成功",
-    "saveFailed": "保存失败"
+    "saveFailed": "保存失败",
+    "ollamaInfo": "Ollama 是本地 LLM 服务，不需要 API Key。请确保 Ollama 正在运行。",
+    "ollamaDefaultUrl": "默认地址: http://localhost:11434",
+    "ollamaBaseUrlDesc": "Ollama 服务地址，支持局域网地址（如 http://192.168.1.100:11434）",
+    "baseUrl": "Base URL"
   },
   "workspaceManager": {
     "title": "工作区管理",
