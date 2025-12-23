@@ -80,7 +80,16 @@
     "newFile": "New File",
     "newFolder": "New Folder",
     "refresh": "Refresh",
-    "deleteConfirm": "Are you sure you want to delete {{name}}?"
+    "deleteConfirm": "Are you sure you want to delete {{name}}?",
+    "searchPrompts": "Search files, tags, history...",
+    "searchResults": "Found {{count}} results",
+    "matchedContent": "files matched by content",
+    "matchedTags": "files matched by tags",
+    "matchedHistory": "files matched by history",
+    "noSearchResults": "No matching results found",
+    "contentLabel": "Content",
+    "tagsLabel": "Tags",
+    "historyLabel": "History"
   },
   "editor": {
     "selectFile": "Select a file to start editing",

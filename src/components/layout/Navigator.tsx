@@ -163,14 +163,14 @@ export default function Navigator() {
 
   const handleGit = async () => {
     if (!workspace) return;
-    
+
     try {
       // Set workspace path for Git store
       setWorkspacePath(workspace.path);
-      
+
       // Check if Git is configured
       const config = await invoke('get_git_config', { workspacePath: workspace.path });
-      
+
       if (!config || !(config as any).is_configured) {
         // Show config dialog
         setShowGitConfigDialog(true);

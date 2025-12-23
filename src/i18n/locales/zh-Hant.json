@@ -75,7 +75,16 @@
     "newFile": "新建檔案",
     "newFolder": "新建資料夾",
     "refresh": "重新整理",
-    "deleteConfirm": "確定要刪除 {{name}} 嗎？"
+    "deleteConfirm": "確定要刪除 {{name}} 嗎？",
+    "searchPrompts": "搜尋檔案、標籤、歷史...",
+    "searchResults": "找到 {{count}} 個結果",
+    "matchedContent": "個檔案匹配內容",
+    "matchedTags": "個檔案匹配標籤",
+    "matchedHistory": "個檔案匹配歷史",
+    "noSearchResults": "未找到匹配結果",
+    "contentLabel": "內容",
+    "tagsLabel": "標籤",
+    "historyLabel": "歷史"
   },
   "editor": {
     "selectFile": "選擇檔案開始編輯",

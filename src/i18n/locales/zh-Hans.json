@@ -80,7 +80,16 @@
     "newFile": "新建文件",
     "newFolder": "新建文件夹",
     "refresh": "刷新",
-    "deleteConfirm": "确定要删除 {{name}} 吗？"
+    "deleteConfirm": "确定要删除 {{name}} 吗？",
+    "searchPrompts": "搜索文件、标签、历史...",
+    "searchResults": "找到 {{count}} 个结果",
+    "matchedContent": "个文件匹配内容",
+    "matchedTags": "个文件匹配标签",
+    "matchedHistory": "个文件匹配历史",
+    "noSearchResults": "未找到匹配结果",
+    "contentLabel": "内容",
+    "tagsLabel": "标签",
+    "historyLabel": "历史"
   },
   "editor": {
     "selectFile": "选择文件开始编辑",
