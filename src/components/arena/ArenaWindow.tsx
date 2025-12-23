@@ -246,17 +246,12 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
               runtime.config.model = model.model_id;
 
               // Set correct enum value based on provider type
-              if (fullProvider.provider === "openrouter") {
-                runtime.config.provider = "openrouter";
-              }
+              runtime.config.provider = fullProvider.provider;
 
               console.log(`[Arena] Final config:`, JSON.stringify(runtime.config));
 
               // Determine correct base_url
               let baseUrl = fullProvider.base_url || null;
-              if (!baseUrl && fullProvider.provider === "openrouter") {
-                baseUrl = "https://openrouter.ai/api/v1";
-              }
 
               console.log(`[Arena] Using base_url: ${baseUrl}, Provider type: ${fullProvider.provider}`);
 
@@ -356,17 +351,12 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
             runtime.config.model = model.model_id;
 
             // 根据 provider 类型设置正确的枚举值
-            if (fullProvider.provider === "openrouter") {
-              runtime.config.provider = "openrouter";
-            }
+            runtime.config.provider = fullProvider.provider;
 
             console.log(`[Arena Serial] Final config:`, JSON.stringify(runtime.config));
 
             // 确定正确的 base_url
             let baseUrl = fullProvider.base_url || null;
-            if (!baseUrl && fullProvider.provider === "openrouter") {
-              baseUrl = "https://openrouter.ai/api/v1";
-            }
 
             console.log(`[Arena Serial] Using base_url: ${baseUrl}, Provider type: ${fullProvider.provider}`);
 
@@ -610,15 +600,11 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
 
       runtime.config.model = model.model_id;
 
-      if (fullProvider.provider === "openrouter") {
-        runtime.config.provider = "openrouter";
-      }
+      // Set correct provider type
+      runtime.config.provider = fullProvider.provider;
 
       // 确定正确的 base_url
       let baseUrl = fullProvider.base_url || null;
-      if (!baseUrl && fullProvider.provider === "openrouter") {
-        baseUrl = "https://openrouter.ai/api/v1";
-      }
 
       const result = await invoke<ExecutionResult>("execute_prompt", {
         promptYaml: JSON.stringify(runtime),
@@ -761,7 +747,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium">{model.model_name}</div>
-                      <div className="text-xs text-muted-foreground">{model.provider_type}</div>
+                      <div className="text-xs text-muted-foreground">{model.provider_name}</div>
                     </div>
                   </button>
                 );
@@ -913,5 +899,3 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
     </div>
   );
 }
-
-
