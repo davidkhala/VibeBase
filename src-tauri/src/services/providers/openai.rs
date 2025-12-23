@@ -1,12 +1,24 @@
 use crate::models::execution::*;
 use reqwest::Client;
 
+#[allow(dead_code)]
 pub async fn execute(
     model: &str,
     messages: Vec<OpenAIMessage>,
     temperature: f32,
     api_key: &str,
     base_url: Option<&str>,
+) -> Result<(String, OpenAIUsage), String> {
+    execute_with_name(model, messages, temperature, api_key, base_url, "OpenAI").await
+}
+
+pub async fn execute_with_name(
+    model: &str,
+    messages: Vec<OpenAIMessage>,
+    temperature: f32,
+    api_key: &str,
+    base_url: Option<&str>,
+    provider_name: &str,
 ) -> Result<(String, OpenAIUsage), String> {
     let client = Client::new();
     let url_base = base_url.unwrap_or("https://api.openai.com/v1");
@@ -19,19 +31,19 @@ pub async fn execute(
         stream: Some(false),
     };
 
-    println!("🔍 [OpenAI Provider] URL: {}", url);
-    println!("🔍 [OpenAI Provider] Model: {}", model);
-    println!("🔍 [OpenAI Provider] Messages count: {}", request.messages.len());
-    println!("🔍 [OpenAI Provider] API key length: {} bytes", api_key.len());
-    println!("🔍 [OpenAI Provider] API key chars: {} chars", api_key.chars().count());
+    println!("🔍 [{}] URL: {}", provider_name, url);
+    println!("🔍 [{}] Model: {}", provider_name, model);
+    println!("🔍 [{}] Messages count: {}", provider_name, request.messages.len());
+    println!("🔍 [{}] API key length: {} bytes", provider_name, api_key.len());
+    println!("🔍 [{}] API key chars: {} chars", provider_name, api_key.chars().count());
     
-    // 安全地显示 API key 前缀（按字符而非字节）
+    // Safely display API key prefix (by characters not bytes)
     let key_prefix: String = api_key.chars().take(15).collect();
-    println!("🔍 [OpenAI Provider] API key prefix: {}", key_prefix);
+    println!("🔍 [{}] API key prefix: {}", provider_name, key_prefix);
     
-    // 检查是否是遮挡字符
+    // Check if contains bullet characters
     if api_key.contains('•') {
-        println!("⚠️ [OpenAI Provider] API key contains bullet characters - may be masked/invalid");
+        println!("⚠️ [{}] API key contains bullet characters - may be masked/invalid", provider_name);
     }
 
     let mut req = client.post(&url).json(&request);
@@ -39,14 +51,14 @@ pub async fn execute(
     // Add auth header if API key is provided (not needed for Ollama)
     if !api_key.is_empty() {
         req = req.header("Authorization", format!("Bearer {}", api_key));
-        println!("✅ [OpenAI Provider] Authorization header added");
+        println!("✅ [{}] Authorization header added", provider_name);
     } else {
-        println!("⚠️ [OpenAI Provider] No API key provided");
+        println!("⚠️ [{}] No API key provided", provider_name);
     }
 
     // Add OpenRouter specific headers
     if url_base.contains("openrouter.ai") {
-        println!("✅ [OpenAI Provider] Adding OpenRouter headers");
+        println!("✅ [{}] Adding OpenRouter headers", provider_name);
         req = req
             .header("HTTP-Referer", "https://vibebase.dev")
             .header("X-Title", "VibeBase");
@@ -60,11 +72,11 @@ pub async fn execute(
     if !response.status().is_success() {
         let status = response.status();
         let error_text = response.text().await.unwrap_or_default();
-        println!("❌ [OpenAI Provider] API Error: {} - {}", status, error_text);
+        println!("❌ [{}] API Error: {} - {}", provider_name, status, error_text);
         return Err(format!("API error {}: {}", status, error_text));
     }
 
-    println!("✅ [OpenAI Provider] Request successful");
+    println!("✅ [{}] Request successful", provider_name);
 
     let api_response: OpenAIResponse = response
         .json()
