@@ -14,26 +14,31 @@ pub async fn execute_with_provider(
 ) -> Result<(String, OpenAIUsage), String> {
     match provider {
         Provider::OpenAI => {
-            openai::execute(model, messages, temperature, api_key, None).await
+            openai::execute_with_name(model, messages, temperature, api_key, None, "OpenAI").await
         }
         Provider::Anthropic => {
             anthropic::execute(model, messages, temperature, api_key).await
         }
         Provider::DeepSeek => {
-            let url = base_url.unwrap_or("https://api.deepseek.com/v1");
-            openai::execute(model, messages, temperature, api_key, Some(url)).await
+            let url = base_url.unwrap_or("https://api.deepseek.com");
+            openai::execute_with_name(model, messages, temperature, api_key, Some(url), "DeepSeek").await
         }
         Provider::OpenRouter => {
             let url = base_url.unwrap_or("https://openrouter.ai/api/v1");
-            openai::execute(model, messages, temperature, api_key, Some(url)).await
+            openai::execute_with_name(model, messages, temperature, api_key, Some(url), "OpenRouter").await
         }
         Provider::Ollama => {
             let url = base_url.unwrap_or("http://localhost:11434/v1");
-            openai::execute(model, messages, temperature, "", Some(url)).await
+            openai::execute_with_name(model, messages, temperature, "", Some(url), "Ollama").await
         }
         Provider::AiHubMix => {
             let url = base_url.unwrap_or("https://aihubmix.com/v1");
-            openai::execute(model, messages, temperature, api_key, Some(url)).await
+            openai::execute_with_name(model, messages, temperature, api_key, Some(url), "AiHubMix").await
+        }
+        Provider::Custom => {
+            // Custom provider must have base_url
+            let url = base_url.ok_or("Custom provider requires base_url")?;
+            openai::execute_with_name(model, messages, temperature, api_key, Some(url), "Custom").await
         }
         Provider::Google => {
             Err("Google Gemini API format is different, requires separate implementation".to_string())
@@ -46,6 +51,16 @@ pub async fn execute_with_provider(
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
