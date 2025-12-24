@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { open } from "@tauri-apps/api/dialog";
-import { invoke } from "@tauri-apps/api/tauri";
+import { open } from "@tauri-apps/plugin-dialog";
+import { invoke } from "@tauri-apps/api/core";
 import { useWorkspaceStore, Workspace } from "../stores/workspaceStore";
 import { FolderOpen, Clock } from "lucide-react";
 import { useState, useEffect } from "react";
