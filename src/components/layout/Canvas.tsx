@@ -273,7 +273,7 @@ export default function Canvas() {
             <div className="text-center space-y-4">
               <FileCode className="w-16 h-16 text-muted-foreground mx-auto" />
               <p className="text-muted-foreground">
-                Select a file to start editing
+                {t("editor.selectFile")}
               </p>
             </div>
           </div>

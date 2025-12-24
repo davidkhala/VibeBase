@@ -68,7 +68,8 @@
   "inspector": {
     "execution": "执行",
     "metadata": "元数据",
-    "history": "历史"
+    "history": "历史",
+    "selectFile": "打开文件以查看变量和选项"
   },
   "workspace": {
     "noWorkspace": "未打开工作区",

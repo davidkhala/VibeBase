@@ -173,6 +173,7 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
                     <button
                       onClick={() => setSearchQuery("")}
                       className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 hover:bg-accent rounded transition-colors"
+                      title={t("actions.clearSearch")}
                     >
                       <X className="w-3.5 h-3.5 text-muted-foreground" />
                     </button>
@@ -181,6 +182,7 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
                 <button
                   onClick={handleAddVariable}
                   className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 shadow-sm flex-shrink-0"
+                  title={t("variables.addVariable")}
                 >
                   <Plus className="w-4 h-4" />
                   {t("variables.addVariable")}
@@ -257,6 +259,7 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
                     <button
                       onClick={handleAddVariable}
                       className="px-6 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 shadow-sm"
+                      title={t("variables.addFirstVariable")}
                     >
                       <Plus className="w-4 h-4 inline mr-2" />
                       {t("variables.addFirstVariable")}
@@ -273,6 +276,7 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
                     <button
                       onClick={() => setSearchQuery("")}
                       className="mt-3 text-sm text-primary hover:underline"
+                      title={t("actions.clearSearch")}
                     >
                       {t("actions.clearSearch", "清除搜索")}
                     </button>
@@ -307,6 +311,7 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
             <button
               onClick={onClose}
               className="px-5 py-2 text-sm font-medium text-foreground bg-secondary rounded-lg hover:bg-secondary/80 transition-colors"
+              title={t("actions.cancel")}
             >
               {t("actions.cancel")}
             </button>
@@ -314,6 +319,7 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
               onClick={handleSave}
               disabled={saving}
               className="px-5 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 disabled:opacity-50 shadow-sm transition-colors"
+              title={saving ? t("variables.saving") : t("variables.saveVariables")}
             >
               {saving ? t("variables.saving") : t("variables.saveVariables")}
             </button>
@@ -332,6 +338,7 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
                 <button
                   onClick={() => setShowHelp(false)}
                   className="p-1 hover:bg-accent rounded transition-colors"
+                  title={t("actions.close")}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -419,6 +426,7 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
                 <button
                   onClick={() => setShowHelp(false)}
                   className="px-4 py-2 text-sm font-medium text-white bg-primary rounded hover:bg-primary/90"
+                  title={t("variables.helpGotIt")}
                 >
                   {t("variables.helpGotIt")}
                 </button>

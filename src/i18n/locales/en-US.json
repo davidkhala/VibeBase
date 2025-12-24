@@ -68,7 +68,8 @@
   "inspector": {
     "execution": "Execution",
     "metadata": "Metadata",
-    "history": "History"
+    "history": "History",
+    "selectFile": "Open a file to view variables and options"
   },
   "workspace": {
     "noWorkspace": "No workspace opened",
