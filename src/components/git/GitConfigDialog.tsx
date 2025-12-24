@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { X, Key, Lock, User, Link as LinkIcon, AlertCircle } from "lucide-react";
 import { useGitStore } from "../../stores/gitStore";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 
 interface GitConfigDialogProps {
   onClose: () => void;
