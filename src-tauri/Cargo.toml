@@ -1,6 +1,6 @@
 [package]
 name = "vibebase"
-version = "0.1.11"
+version = "0.2.0"
 description = "A Prompt IDE for LLM Engineering"
 authors = ["VibeBase Team"]
 license = ""

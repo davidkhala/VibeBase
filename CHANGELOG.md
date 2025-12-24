@@ -5,6 +5,58 @@ All notable changes to VibeBase will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2025-12-24
+
+### 🚀 Major Update: Tauri 2.0 Migration
+
+This release represents a significant architectural upgrade with the migration from Tauri 1.x to Tauri 2.0, introducing breaking changes in the permission system and window management.
+
+### Added
+- **Real-time Token Estimation**: Added live token counting in the editor header using `js-tiktoken`
+  - Displays estimated token count for current Markdown file (gpt-4/cl100k_base encoding)
+  - Shows "..." loading state when switching files or during calculation
+  - 800ms debounce to prevent UI freezing during typing
+  - Token count displayed in right side of editor header with "Tokens: XXX" format
+  - Automatically hidden when viewing history versions
+  - Uses thousand separators for better readability (e.g., "1,234")
+- **Tauri 2.0 Permission System (ACL)**: Implemented comprehensive capability-based permission system
+  - Created `src-tauri/capabilities/default.json` with all necessary window management permissions
+  - Added explicit permissions for window close, minimize, maximize, dragging, and focus operations
+  - Resolved all window operation failures caused by missing permissions in Tauri 2.0
+
+### Changed
+- **Multi-Platform Window Styling**: Optimized independent window appearance for different operating systems
+  - **macOS**: Large rounded corners (`rounded-xl` - 12px) with transparent background
+  - **Linux**: Medium rounded corners (`rounded-lg` - 8px)
+  - **Windows**: No rounded corners (sharp edges, native Windows style)
+  - Window control buttons now match platform conventions (macOS left-side traffic lights, Windows/Linux right-side icons)
+- **Window Controls Initialization**: Fixed platform detection to prevent style flashing
+  - Changed initial platform state from "macos" to empty string
+  - Added UserAgent fallback for platform detection
+  - Prevents Windows/Linux users from seeing macOS-style buttons during startup
+- **Transparent Window Implementation**: Improved window transparency and rounded corner rendering
+  - Modified global CSS to use transparent body background
+  - Moved background color to `#root` container for proper layering
+  - macOS-only transparent window configuration using conditional compilation
+
+### Fixed
+- **Tauri 2.0 Window Operations**: Fixed all window management issues after Tauri 2.0 upgrade
+  - Window close, minimize, maximize now work correctly with proper async/await handling
+  - Window dragging via `data-tauri-drag-region` now functional with ACL permissions
+  - All window API calls properly await Promise resolution
+- **Window Styling Consistency**: Resolved window appearance issues across platforms
+  - Fixed rounded corners not displaying on macOS due to opaque body background
+  - Corrected platform-specific styling to match OS conventions
+  - Eliminated style flashing when opening new windows
+- **Permission Configuration**: Removed invalid `core:window:allow-set-zoom` permission that caused build errors
+
+### Technical Details
+- Added `js-tiktoken` dependency (v1.0.21) for client-side token calculation
+- Implemented debounced token counting with React hooks and refs
+- Created Tauri 2.0 capabilities configuration following new security model
+- Updated Rust window creation code with platform-specific conditional compilation
+- Enhanced CSS architecture for transparent window support
+
 ## [0.1.11] - 2025-12-23
 
 ### Added
