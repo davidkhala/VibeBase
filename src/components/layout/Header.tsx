@@ -2,9 +2,9 @@ import { useTranslation } from "react-i18next";
 import { useThemeStore } from "../../stores/themeStore";
 import { useWorkspaceStore, Workspace, FileNode } from "../../stores/workspaceStore";
 import { Moon, Sun, Monitor, FolderOpen, Languages, Settings as SettingsIcon, Layers, ChevronDown, History, BarChart3, Search, X } from "lucide-react";
-import { useState, useEffect, useMemo } from "react";
-import { invoke } from "@tauri-apps/api/tauri";
-import { open } from "@tauri-apps/api/dialog";
+import { useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
 import { useEditorStore } from "../../stores/editorStore";
 
 interface RecentProject {
