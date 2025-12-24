@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Sparkles, Palette, Languages, Clock } from "lucide-react";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 
 interface EnabledModel {
   id: string;              // provider_name::model_id

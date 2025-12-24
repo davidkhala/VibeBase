@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import { useConfigStore } from "../../stores/configStore";
 import { Key, Check, Loader2 } from "lucide-react";
 

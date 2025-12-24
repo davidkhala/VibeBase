@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { Search, Eye, EyeOff, Zap, Trash2, CheckCircle, XCircle, Loader2, Plus, Edit2 } from "lucide-react";
 import CustomProviderDialog, { CustomProviderData } from "../dialogs/CustomProviderDialog";

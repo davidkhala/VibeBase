@@ -6,10 +6,11 @@ import WorkspaceManager from "./WorkspaceManager";
 import AboutPanel from "./AboutPanel";
 import GitSettingsPanel from "./GitSettingsPanel";
 import AutoSaveIndicator from "../ui/AutoSaveIndicator";
-import { appWindow } from "@tauri-apps/api/window";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useTranslation } from "react-i18next";
 import { useThemeStore } from "../../stores/themeStore";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
+import WindowControls, { useWindowStyle } from "../ui/WindowControls";
 
 interface ArenaSettings {
   concurrent_execution: boolean;
@@ -38,6 +39,7 @@ type SettingsTab =
 export default function SettingsPanel({ onClose, isStandaloneWindow = false }: SettingsPanelProps) {
   const { t, i18n } = useTranslation();
   const { theme, setTheme } = useThemeStore();
+  const { getWindowBorderRadius } = useWindowStyle();
   const [activeTab, setActiveTab] = useState<SettingsTab>("general");
   const [arenaSettings, setArenaSettings] = useState<ArenaSettings>({
     concurrent_execution: true,
@@ -100,25 +102,16 @@ export default function SettingsPanel({ onClose, isStandaloneWindow = false }: S
   };
 
 
-  const handleMinimize = async () => {
-    try {
-      await appWindow.minimize();
-    } catch (error) {
-      console.error("Failed to minimize window:", error);
-    }
-  };
-
-  const handleMaximize = async () => {
-    try {
-      await appWindow.toggleMaximize();
-    } catch (error) {
-      console.error("Failed to maximize window:", error);
-    }
-  };
-
-  const handleClose = () => {
+  const handleClose = async () => {
     if (isStandaloneWindow) {
-      appWindow.close();
+      try {
+        const window = getCurrentWindow();
+        console.log("Closing settings window...");
+        await window.close();
+        console.log("Settings window closed successfully");
+      } catch (error) {
+        console.error("Failed to close settings window:", error);
+      }
     } else {
       onClose();
     }
@@ -167,42 +160,19 @@ export default function SettingsPanel({ onClose, isStandaloneWindow = false }: S
   ];
 
   return (
-    <div className={isStandaloneWindow ? "w-full h-full flex items-center justify-center bg-card" : "fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center"}>
+    <div className={isStandaloneWindow ? "w-full h-full" : "fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center"}>
       {/* 全局自动保存提示 */}
       <AutoSaveIndicator status={saveStatus} />
       
-      <div className={isStandaloneWindow ? "w-full h-full bg-card flex flex-col" : "w-[1200px] h-[800px] bg-card border border-border rounded-lg shadow-xl flex flex-col"}>
+      <div className={isStandaloneWindow ? `w-full h-full bg-card flex flex-col ${getWindowBorderRadius()} overflow-hidden` : "w-[1200px] h-[800px] bg-card border border-border rounded-lg shadow-xl flex flex-col"}>
         {/* Header */}
-        <div
-          className={`h-12 border-b border-border flex items-center justify-between px-6 bg-gradient-to-r from-card to-card/50 ${isStandaloneWindow ? "" : "relative"}`}
-          data-tauri-drag-region={isStandaloneWindow}
-        >
-          {isStandaloneWindow && (
-            <div className="flex items-center gap-2" data-tauri-drag-region="none">
-              <button
-                onClick={handleClose}
-                className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-600 transition-colors flex-shrink-0"
-                title={t("actions.close")}
-              />
-              <button
-                onClick={handleMinimize}
-                className="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-600 transition-colors flex-shrink-0"
-                title="最小化"
-              />
-              <button
-                onClick={handleMaximize}
-                className="w-3 h-3 rounded-full bg-green-500 hover:bg-green-600 transition-colors flex-shrink-0"
-                title="最大化"
-              />
-            </div>
-          )}
-          <h2
-            className={`text-lg font-semibold text-foreground ${isStandaloneWindow ? "flex-1 text-center" : ""}`}
-            data-tauri-drag-region={isStandaloneWindow}
-          >
-            {t("settings.title")}
-          </h2>
-          {!isStandaloneWindow && (
+        {isStandaloneWindow ? (
+          <WindowControls title={t("settings.title")} onClose={handleClose} />
+        ) : (
+          <div className="h-12 border-b border-border flex items-center justify-between px-6 bg-gradient-to-r from-card to-card/50 relative">
+            <h2 className="text-lg font-semibold text-foreground">
+              {t("settings.title")}
+            </h2>
             <button
               onClick={handleClose}
               className="absolute right-4 p-1.5 hover:bg-accent rounded transition-colors"
@@ -210,9 +180,8 @@ export default function SettingsPanel({ onClose, isStandaloneWindow = false }: S
             >
               <X className="w-5 h-5" />
             </button>
-          )}
-          {isStandaloneWindow && <div className="w-[68px]" data-tauri-drag-region="none" />}
-        </div>
+          </div>
+        )}
 
         {/* Content */}
         <div className="flex-1 flex overflow-hidden">
