@@ -32,6 +32,10 @@ fn main() {
     let app_settings_state = AppSettingsState::new();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(app_state)
         .manage(llm_provider_state)
         .manage(variables_state)
@@ -85,6 +89,7 @@ fn main() {
             open_arena_statistics_window,
             set_window_theme,
             get_system_theme,
+            get_platform,
             get_recent_projects,
             add_recent_project,
             remove_recent_project,
