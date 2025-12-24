@@ -66,6 +66,44 @@ Perfect for prompt engineers, LLM developers, and AI product teams who need to m
 
 ### Installation
 
+#### Download Pre-built Binaries
+
+Download the latest release from [GitHub Releases](https://github.com/Geoion/VibeBase/releases).
+
+##### macOS
+
+1. Download the DMG file for your architecture:
+   - **Apple Silicon (M1/M2/M3)**: `VibeBase_aarch64-apple-darwin.dmg`
+   - **Intel**: `VibeBase_x86_64-apple-darwin.dmg`
+2. Open the DMG and drag VibeBase to Applications
+3. Remove quarantine attribute (required for unsigned apps):
+   ```bash
+   xattr -c /Applications/VibeBase.app
+   ```
+4. Launch VibeBase from Applications
+
+**Alternative method**: Right-click on VibeBase.app → Select "Open" → Click "Open" in the security dialog
+
+##### Windows
+
+Download and run the installer:
+- **MSI**: `VibeBase_x86_64-pc-windows-msvc.msi` - Traditional Windows Installer
+- **NSIS**: `VibeBase_x86_64-pc-windows-msvc.exe` - Modern installation wizard
+
+##### Linux
+
+- **Debian/Ubuntu**: Download and install the `.deb` package
+  ```bash
+  sudo dpkg -i VibeBase_x86_64-unknown-linux-gnu.deb
+  ```
+- **Other distributions**: Use the AppImage (universal format)
+  ```bash
+  chmod +x VibeBase_x86_64-unknown-linux-gnu.AppImage
+  ./VibeBase_x86_64-unknown-linux-gnu.AppImage
+  ```
+
+#### Build from Source
+
 ```bash
 # Clone the repository
 git clone https://github.com/Geoion/VibeBase.git
