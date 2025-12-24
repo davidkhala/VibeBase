@@ -1,13 +1,13 @@
 #![allow(unexpected_cfgs)]
 
-use tauri::{Manager, Window, WindowBuilder, WindowUrl};
+use tauri::{Manager, Window, WebviewUrl, WebviewWindowBuilder};
 
 #[tauri::command]
 pub async fn open_variables_window(window: Window) -> Result<(), String> {
     let app_handle = window.app_handle();
     
     // Check if window already exists
-    if let Some(existing_window) = app_handle.get_window("variables") {
+    if let Some(existing_window) = app_handle.get_webview_window("variables") {
         existing_window.set_focus().map_err(|e| e.to_string())?;
         return Ok(());
     }
@@ -16,25 +16,24 @@ pub async fn open_variables_window(window: Window) -> Result<(), String> {
     // We'll implement custom window controls in the UI
     let window_url = if cfg!(debug_assertions) {
         // Development mode: use the full URL with port
-        WindowUrl::External("http://localhost:1420/variables.html".parse().unwrap())
+        "http://localhost:1420/variables.html"
     } else {
         // Production mode: use the bundled HTML
-        WindowUrl::App("variables.html".into())
+        "variables.html"
     };
 
-    WindowBuilder::new(
-        &app_handle,
-        "variables",
-        window_url
-    )
-    .title("Global Variables")
-    .inner_size(800.0, 700.0)
-    .min_inner_size(600.0, 500.0)
-    .resizable(true)
-    .center()
-    .decorations(false)
-    .build()
-    .map_err(|e| e.to_string())?;
+    let builder = WebviewWindowBuilder::new(app_handle, "variables", WebviewUrl::App(window_url.into()))
+        .title("Global Variables")
+        .inner_size(800.0, 700.0)
+        .min_inner_size(600.0, 500.0)
+        .resizable(true)
+        .center()
+        .decorations(false);
+    
+    #[cfg(target_os = "macos")]
+    let builder = builder.transparent(true);
+    
+    builder.build().map_err(|e| e.to_string())?;
 
     Ok(())
 }
@@ -44,31 +43,30 @@ pub async fn open_settings_window(window: Window) -> Result<(), String> {
     let app_handle = window.app_handle();
     
     // Check if window already exists
-    if let Some(existing_window) = app_handle.get_window("settings") {
+    if let Some(existing_window) = app_handle.get_webview_window("settings") {
         existing_window.set_focus().map_err(|e| e.to_string())?;
         return Ok(());
     }
 
     // Create new window without decorations
     let window_url = if cfg!(debug_assertions) {
-        WindowUrl::External("http://localhost:1420/settings.html".parse().unwrap())
+        "http://localhost:1420/settings.html"
     } else {
-        WindowUrl::App("settings.html".into())
+        "settings.html"
     };
 
-    WindowBuilder::new(
-        &app_handle,
-        "settings",
-        window_url
-    )
-    .title("Settings")
-    .inner_size(1200.0, 800.0)
-    .min_inner_size(1000.0, 600.0)
-    .resizable(true)
-    .center()
-    .decorations(false)
-    .build()
-    .map_err(|e| e.to_string())?;
+    let builder = WebviewWindowBuilder::new(app_handle, "settings", WebviewUrl::App(window_url.into()))
+        .title("Settings")
+        .inner_size(1200.0, 800.0)
+        .min_inner_size(1000.0, 600.0)
+        .resizable(true)
+        .center()
+        .decorations(false);
+    
+    #[cfg(target_os = "macos")]
+    let builder = builder.transparent(true);
+    
+    builder.build().map_err(|e| e.to_string())?;
 
     Ok(())
 }
@@ -83,31 +81,43 @@ pub fn set_window_theme(window: Window, theme: String) -> Result<(), String> {
         use cocoa::foundation::NSString;
         use objc::{class, msg_send, sel, sel_impl};
         
-        window.with_webview(move |webview| unsafe {
-            let ns_window = webview.ns_window() as id;
+        // In Tauri 2.x, use the window's native handle
+        unsafe {
+            use raw_window_handle::{HasWindowHandle, RawWindowHandle};
             
-            let appearance_name_str = match theme.as_str() {
-                "dark" => {
-                    println!("🌙 [Rust] Setting DARK theme (NSAppearanceNameDarkAqua)");
-                    "NSAppearanceNameDarkAqua"
+            let window_handle = window.window_handle().map_err(|e| format!("Failed to get window handle: {}", e))?;
+            let ns_window = match window_handle.as_ref() {
+                RawWindowHandle::AppKit(handle) => {
+                    // In raw-window-handle 0.6, we need to get the NSView first, then get its window
+                    let ns_view = handle.ns_view.as_ptr() as id;
+                    let ns_window: id = msg_send![ns_view, window];
+                    ns_window
                 },
-                "light" => {
-                    println!("☀️ [Rust] Setting LIGHT theme (NSAppearanceNameAqua)");
-                    "NSAppearanceNameAqua"
-                },
-                _ => {
-                    println!("🖥️ [Rust] Setting SYSTEM theme (nil)");
-                    // For "system", set appearance to nil (use system default)
-                    let _: () = msg_send![ns_window, setAppearance: nil];
-                    return;
-                }
+                _ => return Err("Not a macOS window".to_string()),
             };
-            
+                
+                let appearance_name_str = match theme.as_str() {
+                    "dark" => {
+                        println!("🌙 [Rust] Setting DARK theme (NSAppearanceNameDarkAqua)");
+                        "NSAppearanceNameDarkAqua"
+                    },
+                    "light" => {
+                        println!("☀️ [Rust] Setting LIGHT theme (NSAppearanceNameAqua)");
+                        "NSAppearanceNameAqua"
+                    },
+                    _ => {
+                        println!("🖥️ [Rust] Setting SYSTEM theme (nil)");
+                        // For "system", set appearance to nil (use system default)
+                        let _: () = msg_send![ns_window, setAppearance: nil];
+                        return Ok(());
+                    }
+                };
+                
             let appearance_name = NSString::alloc(nil).init_str(appearance_name_str);
             let appearance: id = msg_send![class!(NSAppearance), appearanceNamed: appearance_name];
             let _: () = msg_send![ns_window, setAppearance: appearance];
             println!("✅ [Rust] Window appearance set successfully");
-        }).map_err(|e| format!("Failed to set window theme: {}", e))?;
+        }
     }
     
     #[cfg(not(target_os = "macos"))]
@@ -124,31 +134,30 @@ pub async fn open_arena_window(window: Window) -> Result<(), String> {
     let app_handle = window.app_handle();
     
     // Check if window already exists
-    if let Some(existing_window) = app_handle.get_window("arena") {
+    if let Some(existing_window) = app_handle.get_webview_window("arena") {
         existing_window.set_focus().map_err(|e| e.to_string())?;
         return Ok(());
     }
 
     // Create new window without decorations
     let window_url = if cfg!(debug_assertions) {
-        WindowUrl::External("http://localhost:1420/arena.html".parse().unwrap())
+        "http://localhost:1420/arena.html"
     } else {
-        WindowUrl::App("arena.html".into())
+        "arena.html"
     };
 
-    WindowBuilder::new(
-        &app_handle,
-        "arena",
-        window_url
-    )
-    .title("Arena")
-    .inner_size(1400.0, 900.0)
-    .min_inner_size(1200.0, 700.0)
-    .resizable(true)
-    .center()
-    .decorations(false)
-    .build()
-    .map_err(|e| e.to_string())?;
+    let builder = WebviewWindowBuilder::new(app_handle, "arena", WebviewUrl::App(window_url.into()))
+        .title("Arena")
+        .inner_size(1400.0, 900.0)
+        .min_inner_size(1200.0, 700.0)
+        .resizable(true)
+        .center()
+        .decorations(false);
+    
+    #[cfg(target_os = "macos")]
+    let builder = builder.transparent(true);
+    
+    builder.build().map_err(|e| e.to_string())?;
 
     Ok(())
 }
@@ -158,31 +167,30 @@ pub async fn open_arena_history_window(window: Window) -> Result<(), String> {
     let app_handle = window.app_handle();
     
     // Check if window already exists
-    if let Some(existing_window) = app_handle.get_window("arena_history") {
+    if let Some(existing_window) = app_handle.get_webview_window("arena_history") {
         existing_window.set_focus().map_err(|e| e.to_string())?;
         return Ok(());
     }
 
     // Create new window without decorations
     let window_url = if cfg!(debug_assertions) {
-        WindowUrl::External("http://localhost:1420/arena-history.html".parse().unwrap())
+        "http://localhost:1420/arena-history.html"
     } else {
-        WindowUrl::App("arena-history.html".into())
+        "arena-history.html"
     };
 
-    WindowBuilder::new(
-        &app_handle,
-        "arena_history",
-        window_url
-    )
-    .title("Arena History")
-    .inner_size(1400.0, 900.0)
-    .min_inner_size(1200.0, 700.0)
-    .resizable(true)
-    .center()
-    .decorations(false)
-    .build()
-    .map_err(|e| e.to_string())?;
+    let builder = WebviewWindowBuilder::new(app_handle, "arena_history", WebviewUrl::App(window_url.into()))
+        .title("Arena History")
+        .inner_size(1400.0, 900.0)
+        .min_inner_size(1200.0, 700.0)
+        .resizable(true)
+        .center()
+        .decorations(false);
+    
+    #[cfg(target_os = "macos")]
+    let builder = builder.transparent(true);
+    
+    builder.build().map_err(|e| e.to_string())?;
 
     Ok(())
 }
@@ -192,31 +200,30 @@ pub async fn open_arena_statistics_window(window: Window) -> Result<(), String> 
     let app_handle = window.app_handle();
     
     // Check if window already exists
-    if let Some(existing_window) = app_handle.get_window("arena_statistics") {
+    if let Some(existing_window) = app_handle.get_webview_window("arena_statistics") {
         existing_window.set_focus().map_err(|e| e.to_string())?;
         return Ok(());
     }
 
     // Create new window without decorations
     let window_url = if cfg!(debug_assertions) {
-        WindowUrl::External("http://localhost:1420/arena-statistics.html".parse().unwrap())
+        "http://localhost:1420/arena-statistics.html"
     } else {
-        WindowUrl::App("arena-statistics.html".into())
+        "arena-statistics.html"
     };
 
-    WindowBuilder::new(
-        &app_handle,
-        "arena_statistics",
-        window_url
-    )
-    .title("Arena Statistics")
-    .inner_size(1200.0, 800.0)
-    .min_inner_size(1000.0, 600.0)
-    .resizable(true)
-    .center()
-    .decorations(false)
-    .build()
-    .map_err(|e| e.to_string())?;
+    let builder = WebviewWindowBuilder::new(app_handle, "arena_statistics", WebviewUrl::App(window_url.into()))
+        .title("Arena Statistics")
+        .inner_size(1200.0, 800.0)
+        .min_inner_size(1000.0, 600.0)
+        .resizable(true)
+        .center()
+        .decorations(false);
+    
+    #[cfg(target_os = "macos")]
+    let builder = builder.transparent(true);
+    
+    builder.build().map_err(|e| e.to_string())?;
 
     Ok(())
 }
@@ -327,5 +334,28 @@ pub fn get_system_theme() -> Result<String, String> {
     {
         // For other platforms (BSD, etc.), default to light
         Ok("light".to_string())
+    }
+}
+
+#[tauri::command]
+pub fn get_platform() -> Result<String, String> {
+    #[cfg(target_os = "macos")]
+    {
+        Ok("macos".to_string())
+    }
+    
+    #[cfg(target_os = "windows")]
+    {
+        Ok("windows".to_string())
+    }
+    
+    #[cfg(target_os = "linux")]
+    {
+        Ok("linux".to_string())
+    }
+    
+    #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
+    {
+        Ok("unknown".to_string())
     }
 }
