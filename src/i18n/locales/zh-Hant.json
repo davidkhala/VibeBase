@@ -95,7 +95,8 @@
   "inspector": {
     "execution": "執行",
     "metadata": "元資料",
-    "history": "歷史"
+    "history": "歷史",
+    "selectFile": "開啟檔案以查看變數和選項"
   },
   "variables": {
     "manager": "全域變數",

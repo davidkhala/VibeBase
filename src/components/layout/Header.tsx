@@ -502,7 +502,7 @@ export default function Header() {
         <button
           onClick={openVariablesWindow}
           className="p-2 hover:bg-accent rounded-md transition-colors"
-          title="Manage Global Variables"
+          title={t("variables.manager")}
         >
           <Layers className="w-4 h-4 text-muted-foreground" />
         </button>
@@ -529,7 +529,7 @@ export default function Header() {
         <button
           onClick={openSettingsWindow}
           className="p-2 hover:bg-accent rounded-md transition-colors"
-          title="Settings"
+          title={t("settings.title")}
         >
           <SettingsIcon className="w-4 h-4 text-muted-foreground" />
         </button>
