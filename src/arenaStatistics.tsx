@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import "./styles/index.css";
 import "./i18n/config";
 import ArenaStatisticsWindow from "./components/arena/ArenaStatisticsWindow";
-import { appWindow } from "@tauri-apps/api/window";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 type Theme = "light" | "dark" | "system";
 
@@ -88,18 +88,19 @@ function ArenaStatisticsApp() {
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, [theme]);
 
-  const handleClose = () => {
-    appWindow.close();
+  const handleClose = async () => {
+    try {
+      const window = getCurrentWindow();
+      console.log("Closing arena statistics window from entry point...");
+      await window.close();
+      console.log("Arena statistics window closed successfully from entry point");
+    } catch (error) {
+      console.error("Failed to close arena statistics window from entry point:", error);
+    }
   };
 
-  const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().includes('MAC');
-  const borderRadius = isMac ? '10px' : '8px';
-
   return (
-    <div
-      className="w-full h-screen bg-transparent"
-      style={{ borderRadius, overflow: 'hidden' }}
-    >
+    <div className="w-full h-screen bg-transparent">
       <ArenaStatisticsWindow onClose={handleClose} isStandaloneWindow={true} />
     </div>
   );
