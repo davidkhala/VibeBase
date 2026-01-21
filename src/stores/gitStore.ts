@@ -15,6 +15,9 @@ interface GitConfig {
   remote_url: string | null;
   is_configured: boolean;
   last_fetch: number | null;
+  commit_message_style: string | null;
+  commit_message_provider: string | null;
+  commit_message_language: string | null;
   created_at: number;
   updated_at: number;
 }

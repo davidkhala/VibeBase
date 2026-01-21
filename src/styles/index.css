@@ -76,8 +76,12 @@
   }
 
   /* Transparent root for standalone windows (arena, settings, etc.) */
+  html.standalone-window,
+  html.standalone-window body,
   html.standalone-window #root {
-    background-color: transparent;
+    background-color: transparent !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
   }
 
   /* 禁用非输入框的文本选择 */

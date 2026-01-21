@@ -114,9 +114,7 @@ function SettingsWindow() {
   };
 
   return (
-    <div className="w-full h-screen bg-transparent">
-      <SettingsPanel onClose={handleClose} isStandaloneWindow={true} />
-    </div>
+    <SettingsPanel onClose={handleClose} isStandaloneWindow={true} />
   );
 }
 

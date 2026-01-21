@@ -105,9 +105,7 @@ function VariablesWindow() {
   };
 
   return (
-    <div className="w-full h-screen bg-transparent">
-      <VariablesManager onClose={handleClose} isStandaloneWindow={true} />
-    </div>
+    <VariablesManager onClose={handleClose} isStandaloneWindow={true} />
   );
 }
 
