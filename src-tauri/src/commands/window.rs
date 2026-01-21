@@ -2,6 +2,43 @@
 
 use tauri::{Manager, Window, WebviewUrl, WebviewWindowBuilder};
 
+#[cfg(target_os = "macos")]
+use tauri::window::{Effect, EffectState, EffectsBuilder};
+
+#[cfg(target_os = "macos")]
+use objc::{msg_send, sel, sel_impl};
+
+#[cfg(target_os = "macos")]
+fn apply_macos_window_style(window: &tauri::WebviewWindow, window_name: &str) -> Result<(), String> {
+    use cocoa::appkit::NSColor;
+    use cocoa::base::{id, nil};
+    
+    println!("🎨 [{}] Setting window background to transparent", window_name);
+    unsafe {
+        let ns_window = window.ns_window().map_err(|e| e.to_string())? as id;
+        // Set window background to completely transparent
+        let bg_color = NSColor::colorWithRed_green_blue_alpha_(nil, 0.0, 0.0, 0.0, 0.0);
+        let _: () = msg_send![ns_window, setBackgroundColor: bg_color];
+        
+        // Also set opaque to false
+        let _: () = msg_send![ns_window, setOpaque: false];
+    }
+    
+    println!("🎨 [{}] Applying window effects: Popover with radius 12.0", window_name);
+    let effects = EffectsBuilder::new()
+        .effect(Effect::Popover)
+        .state(EffectState::Active)
+        .radius(12.0)
+        .build();
+    
+    match window.set_effects(effects) {
+        Ok(_) => println!("✅ [{}] Window effects applied successfully", window_name),
+        Err(e) => println!("❌ [{}] Failed to apply window effects: {}", window_name, e),
+    }
+    
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn open_variables_window(window: Window) -> Result<(), String> {
     let app_handle = window.app_handle();
@@ -28,12 +65,18 @@ pub async fn open_variables_window(window: Window) -> Result<(), String> {
         .min_inner_size(600.0, 500.0)
         .resizable(true)
         .center()
-        .decorations(false);
+        .decorations(false)
+        .title_bar_style(tauri::TitleBarStyle::Overlay);
     
     #[cfg(target_os = "macos")]
-    let builder = builder.transparent(true);
+    let builder = builder
+        .transparent(true)
+        .hidden_title(true);
     
-    builder.build().map_err(|e| e.to_string())?;
+    let window = builder.build().map_err(|e| e.to_string())?;
+
+    #[cfg(target_os = "macos")]
+    apply_macos_window_style(&window, "Variables")?;
 
     Ok(())
 }
@@ -61,12 +104,18 @@ pub async fn open_settings_window(window: Window) -> Result<(), String> {
         .min_inner_size(1000.0, 600.0)
         .resizable(true)
         .center()
-        .decorations(false);
+        .decorations(false)
+        .title_bar_style(tauri::TitleBarStyle::Overlay);
     
     #[cfg(target_os = "macos")]
-    let builder = builder.transparent(true);
+    let builder = builder
+        .transparent(true)
+        .hidden_title(true);
     
-    builder.build().map_err(|e| e.to_string())?;
+    let window = builder.build().map_err(|e| e.to_string())?;
+
+    #[cfg(target_os = "macos")]
+    apply_macos_window_style(&window, "Settings")?;
 
     Ok(())
 }
@@ -152,12 +201,18 @@ pub async fn open_arena_window(window: Window) -> Result<(), String> {
         .min_inner_size(1200.0, 700.0)
         .resizable(true)
         .center()
-        .decorations(false);
+        .decorations(false)
+        .title_bar_style(tauri::TitleBarStyle::Overlay);
     
     #[cfg(target_os = "macos")]
-    let builder = builder.transparent(true);
+    let builder = builder
+        .transparent(true)
+        .hidden_title(true);
     
-    builder.build().map_err(|e| e.to_string())?;
+    let window = builder.build().map_err(|e| e.to_string())?;
+
+    #[cfg(target_os = "macos")]
+    apply_macos_window_style(&window, "Arena")?;
 
     Ok(())
 }
@@ -185,12 +240,18 @@ pub async fn open_arena_history_window(window: Window) -> Result<(), String> {
         .min_inner_size(1200.0, 700.0)
         .resizable(true)
         .center()
-        .decorations(false);
+        .decorations(false)
+        .title_bar_style(tauri::TitleBarStyle::Overlay);
     
     #[cfg(target_os = "macos")]
-    let builder = builder.transparent(true);
+    let builder = builder
+        .transparent(true)
+        .hidden_title(true);
     
-    builder.build().map_err(|e| e.to_string())?;
+    let window = builder.build().map_err(|e| e.to_string())?;
+
+    #[cfg(target_os = "macos")]
+    apply_macos_window_style(&window, "ArenaHistory")?;
 
     Ok(())
 }
@@ -218,12 +279,27 @@ pub async fn open_arena_statistics_window(window: Window) -> Result<(), String> 
         .min_inner_size(1000.0, 600.0)
         .resizable(true)
         .center()
-        .decorations(false);
+        .decorations(false)
+        .title_bar_style(tauri::TitleBarStyle::Overlay);
     
     #[cfg(target_os = "macos")]
-    let builder = builder.transparent(true);
+    let builder = builder
+        .transparent(true)
+        .hidden_title(true);
     
-    builder.build().map_err(|e| e.to_string())?;
+    let window = builder.build().map_err(|e| e.to_string())?;
+
+    // Apply window effects for rounded corners on macOS
+    #[cfg(target_os = "macos")]
+    {
+        let effects = EffectsBuilder::new()
+            .effect(Effect::Popover)
+            .state(EffectState::Active)
+            .radius(12.0)
+            .build();
+        
+        window.set_effects(effects).ok();
+    }
 
     Ok(())
 }
