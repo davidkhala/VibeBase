@@ -121,7 +121,7 @@ export default function ArenaHistoryWindow({ onClose, isStandaloneWindow = false
   };
 
   return (
-    <div className={`w-full h-full flex flex-col ${isStandaloneWindow ? `bg-card ${getWindowBorderRadius()} overflow-hidden` : "bg-card overflow-hidden"}`}>
+    <div className={`w-full h-full flex flex-col ${isStandaloneWindow ? "bg-card rounded-xl overflow-hidden" : "bg-card overflow-hidden"}`}>
       {/* Window Controls */}
       {isStandaloneWindow && (
         <WindowControls title={t("arena.history")} onClose={onClose} />
