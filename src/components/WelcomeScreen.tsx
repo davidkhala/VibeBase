@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { useWorkspaceStore, Workspace } from "../stores/workspaceStore";
+import { useGitStore } from "../stores/gitStore";
 import { FolderOpen, Clock } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -16,6 +17,7 @@ interface RecentProject {
 export default function WelcomeScreen() {
   const { t } = useTranslation();
   const { setWorkspace } = useWorkspaceStore();
+  const { setWorkspacePath } = useGitStore();
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>([]);
 
   useEffect(() => {
@@ -46,6 +48,9 @@ export default function WelcomeScreen() {
           path: selected,
         });
         setWorkspace(workspace);
+        
+        // 自动设置 Git 工作区路径
+        setWorkspacePath(selected);
       }
     } catch (error) {
       console.error("Failed to open workspace:", error);
@@ -58,6 +63,9 @@ export default function WelcomeScreen() {
         path: path,
       });
       setWorkspace(workspace);
+      
+      // 自动设置 Git 工作区路径
+      setWorkspacePath(path);
     } catch (error) {
       console.error("Failed to open recent project:", error);
     }
