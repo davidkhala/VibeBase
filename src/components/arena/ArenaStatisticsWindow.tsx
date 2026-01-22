@@ -27,7 +27,6 @@ interface Statistics {
 export default function ArenaStatisticsWindow({ onClose, isStandaloneWindow = false }: ArenaStatisticsWindowProps) {
   const { t } = useTranslation();
   const { workspace } = useWorkspaceStore();
-  const { getWindowBorderRadius } = useWindowStyle();
   const [workspacePath, setWorkspacePath] = useState<string | null>(null);
   const [statistics, setStatistics] = useState<Statistics | null>(null);
   const [loading, setLoading] = useState(true);

@@ -64,7 +64,6 @@ interface PromptRuntime {
 
 export default function ArenaWindow({ onClose, isStandaloneWindow = false }: ArenaWindowProps) {
   const { t } = useTranslation();
-  const { getWindowBorderRadius } = useWindowStyle();
 
   // Read passed data from localStorage
   const [variables, setVariables] = useState<string[]>([]);

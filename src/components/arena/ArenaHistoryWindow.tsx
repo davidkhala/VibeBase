@@ -45,7 +45,6 @@ interface ModelOutput {
 export default function ArenaHistoryWindow({ onClose, isStandaloneWindow = false }: ArenaHistoryWindowProps) {
   const { t } = useTranslation();
   const { workspace } = useWorkspaceStore();
-  const { getWindowBorderRadius } = useWindowStyle();
   const [workspacePath, setWorkspacePath] = useState<string | null>(null);
   const [battles, setBattles] = useState<ArenaBattle[]>([]);
   const [selectedBattle, setSelectedBattle] = useState<ArenaBattle | null>(null);

@@ -18,7 +18,6 @@ interface VariablesManagerProps {
 
 export default function VariablesManager({ onClose, isStandaloneWindow = false }: VariablesManagerProps) {
   const { t } = useTranslation();
-  const { getWindowBorderRadius } = useWindowStyle();
   const [variables, setVariables] = useState<GlobalVariable[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
