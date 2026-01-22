@@ -69,7 +69,7 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
       // Validate
       for (const v of variables) {
         if (!v.key) {
-          alert("Variable key cannot be empty");
+          alert(t("errors.variableKeyEmpty"));
           setSaving(false);
           return;
         }
@@ -79,7 +79,7 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
       const keys = variables.map((v) => v.key);
       const duplicates = keys.filter((k, i) => keys.indexOf(k) !== i);
       if (duplicates.length > 0) {
-        alert(`Duplicate variable keys: ${duplicates.join(", ")}`);
+        alert(`${t("errors.duplicateKeys")}: ${duplicates.join(", ")}`);
         setSaving(false);
         return;
       }
@@ -94,7 +94,7 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
       }
     } catch (error) {
       console.error("Failed to save variables:", error);
-      alert("Failed to save: " + error);
+      alert(t("errors.saveFailed") + ": " + error);
       setSaving(false);
     }
   };
@@ -130,7 +130,7 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
   return (
     <div className={isStandaloneWindow ? "w-full h-full" : "fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"}>
       <div
-        className={isStandaloneWindow ? `w-full h-full bg-card flex flex-col ${getWindowBorderRadius()} overflow-hidden` : "w-full max-w-[800px] h-[700px] bg-card border border-border rounded-lg shadow-2xl flex flex-col"}
+        className={isStandaloneWindow ? "w-full h-full bg-card flex flex-col rounded-xl overflow-hidden" : "w-full max-w-[800px] h-[700px] bg-card border border-border rounded-lg shadow-2xl flex flex-col"}
       >
         {/* Header with window controls */}
         {isStandaloneWindow ? (
@@ -166,7 +166,7 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={t("variables.searchPlaceholder", "搜索变量名...")}
+                    placeholder={t("variables.searchPlaceholder")}
                     className="w-full pl-10 pr-4 py-2 text-sm bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                   />
                   {searchQuery && (
@@ -240,7 +240,7 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
                       <button
                         onClick={() => handleDeleteVariable(variable.id)}
                         className="p-1.5 hover:bg-destructive/10 rounded transition-colors opacity-0 group-hover:opacity-100"
-                        title={t("actions.delete", "Delete")}
+                        title={t("actions.delete")}
                       >
                         <Trash2 className="w-4 h-4 text-destructive" />
                       </button>
@@ -271,14 +271,14 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
                   <div className="text-center py-12">
                     <Search className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-50" />
                     <p className="text-sm text-muted-foreground">
-                      {t("variables.noResults", "没有找到匹配的变量")}
+                      {t("variables.noResults")}
                     </p>
                     <button
                       onClick={() => setSearchQuery("")}
                       className="mt-3 text-sm text-primary hover:underline"
                       title={t("actions.clearSearch")}
                     >
-                      {t("actions.clearSearch", "清除搜索")}
+                      {t("actions.clearSearch")}
                     </button>
                   </div>
                 )}
@@ -289,15 +289,15 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
 
         {/* Footer */}
         <div className="h-16 border-t border-border flex items-center justify-between px-6 bg-card/50">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-500"></div>
-              <span className="text-xs text-muted-foreground">
-                {searchQuery
-                  ? `${filteredVariables.length} / ${variables.length} variable(s)`
-                  : `${variables.length} variable(s)`} • {t("variables.stored")} ~/.vibebase/app.db
-              </span>
-            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                <span className="text-xs text-muted-foreground">
+                  {searchQuery
+                    ? `${filteredVariables.length} / ${variables.length}`
+                    : `${variables.length}`} • {t("variables.stored")} ~/.vibebase/app.db
+                </span>
+              </div>
             <button
               onClick={() => setShowHelp(true)}
               className="flex items-center gap-1 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-accent rounded transition-colors"
