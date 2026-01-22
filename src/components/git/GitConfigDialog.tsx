@@ -58,19 +58,19 @@ export default function GitConfigDialog({ onClose }: GitConfigDialogProps) {
     try {
       // Validate
       if (authMethod === "ssh" && !sshKeyPath) {
-        setError(t("git.sshKeyPath") + " is required");
+        setError(t("git.sshKeyPath") + " " + t("git.isRequired"));
         setSaving(false);
         return;
       }
 
       if (authMethod === "token" && !gitToken) {
-        setError(t("git.token") + " is required");
+        setError(t("git.token") + " " + t("git.isRequired"));
         setSaving(false);
         return;
       }
 
       if (useCustomUserInfo && (!userName || !userEmail)) {
-        setError(t("git.userName") + " and " + t("git.userEmail") + " are required");
+        setError(t("git.userName") + " " + t("git.userEmail") + " " + t("git.isRequired"));
         setSaving(false);
         return;
       }
@@ -89,6 +89,9 @@ export default function GitConfigDialog({ onClose }: GitConfigDialogProps) {
         remote_url: remoteUrl || null,
         is_configured: true,
         last_fetch: null,
+        commit_message_style: "detailed",
+        commit_message_provider: null,
+        commit_message_language: "auto",
         created_at: Date.now(),
         updated_at: Date.now(),
       };
@@ -160,18 +163,18 @@ export default function GitConfigDialog({ onClose }: GitConfigDialogProps) {
                   <div className="space-y-1">
                     {systemGitConfig.user_name && (
                       <p className="text-sm text-foreground">
-                        <span className="text-muted-foreground">Name:</span> {systemGitConfig.user_name}
+                        <span className="text-muted-foreground">{t("git.nameLabel")}:</span> {systemGitConfig.user_name}
                       </p>
                     )}
                     {systemGitConfig.user_email && (
                       <p className="text-sm text-foreground">
-                        <span className="text-muted-foreground">Email:</span> {systemGitConfig.user_email}
+                        <span className="text-muted-foreground">{t("git.emailLabel")}:</span> {systemGitConfig.user_email}
                       </p>
                     )}
                   </div>
                 ) : (
                   <p className="text-xs text-yellow-500">
-                    ⚠️ System git config not found. Please run:
+                    ⚠️ {t("git.systemConfigNotFound")}
                     <br />
                     git config --global user.name "Your Name"
                     <br />
@@ -182,7 +185,7 @@ export default function GitConfigDialog({ onClose }: GitConfigDialogProps) {
             ) : (
               <div className="space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  Override system git config for this workspace
+                  {t("git.overrideSystemConfig")}
                 </p>
                 <div>
                   <label className="block text-sm mb-1">{t("git.userName")}</label>
@@ -190,7 +193,7 @@ export default function GitConfigDialog({ onClose }: GitConfigDialogProps) {
                     type="text"
                     value={userName}
                     onChange={(e) => setUserName(e.target.value)}
-                    placeholder="Your Name"
+                    placeholder={t("git.userNamePlaceholder")}
                     className="w-full px-3 py-2 bg-secondary border border-border rounded-lg"
                   />
                 </div>
@@ -200,7 +203,7 @@ export default function GitConfigDialog({ onClose }: GitConfigDialogProps) {
                     type="email"
                     value={userEmail}
                     onChange={(e) => setUserEmail(e.target.value)}
-                    placeholder="your.email@example.com"
+                    placeholder={t("git.userEmailPlaceholder")}
                     className="w-full px-3 py-2 bg-secondary border border-border rounded-lg"
                   />
                 </div>
@@ -215,7 +218,7 @@ export default function GitConfigDialog({ onClose }: GitConfigDialogProps) {
               {t("git.authMethod")}
             </h3>
             <p className="text-sm text-muted-foreground">
-              Used for authenticating with remote repository (push/pull)
+              {t("git.authMethodUsage")}
             </p>
             <div className="space-y-2">
               <label className="flex items-center gap-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-accent">
@@ -228,7 +231,7 @@ export default function GitConfigDialog({ onClose }: GitConfigDialogProps) {
                 />
                 <div>
                   <div className="font-medium">{t("git.authNone")}</div>
-                  <div className="text-sm text-muted-foreground">For public repositories</div>
+                  <div className="text-sm text-muted-foreground">{t("git.authMethodForPublic")}</div>
                 </div>
               </label>
 
@@ -242,7 +245,7 @@ export default function GitConfigDialog({ onClose }: GitConfigDialogProps) {
                 />
                 <div>
                   <div className="font-medium">{t("git.authSSH")}</div>
-                  <div className="text-sm text-muted-foreground">~/.ssh/id_rsa or custom path</div>
+                  <div className="text-sm text-muted-foreground">{t("git.authMethodSshDesc")}</div>
                 </div>
               </label>
 
@@ -256,7 +259,7 @@ export default function GitConfigDialog({ onClose }: GitConfigDialogProps) {
                 />
                 <div>
                   <div className="font-medium">{t("git.authToken")}</div>
-                  <div className="text-sm text-muted-foreground">Personal Access Token</div>
+                  <div className="text-sm text-muted-foreground">{t("git.authMethodTokenDesc")}</div>
                 </div>
               </label>
             </div>
@@ -276,12 +279,12 @@ export default function GitConfigDialog({ onClose }: GitConfigDialogProps) {
                 />
               </div>
               <div>
-                <label className="block text-sm mb-1">{t("git.sshPassphrase")} (Optional)</label>
+                <label className="block text-sm mb-1">{t("git.sshPassphraseOptional")}</label>
                 <input
                   type="password"
                   value={sshPassphrase}
                   onChange={(e) => setSshPassphrase(e.target.value)}
-                  placeholder="Leave empty if no passphrase"
+                  placeholder={t("git.sshPassphrasePlaceholder")}
                   className="w-full px-3 py-2 bg-secondary border border-border rounded-lg"
                 />
               </div>
@@ -297,11 +300,11 @@ export default function GitConfigDialog({ onClose }: GitConfigDialogProps) {
                   type="password"
                   value={gitToken}
                   onChange={(e) => setGitToken(e.target.value)}
-                  placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                  placeholder={t("git.tokenPlaceholder")}
                   className="w-full px-3 py-2 bg-secondary border border-border rounded-lg"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Generate at: github.com/settings/tokens
+                  {t("git.tokenHint")}
                 </p>
               </div>
             </div>
@@ -311,13 +314,13 @@ export default function GitConfigDialog({ onClose }: GitConfigDialogProps) {
           <div className="space-y-3">
             <h3 className="font-medium flex items-center gap-2">
               <LinkIcon className="w-4 h-4" />
-              {t("git.remoteUrl")} (Optional)
+              {t("git.remoteUrlOptional")}
             </h3>
             <input
               type="text"
               value={remoteUrl}
               onChange={(e) => setRemoteUrl(e.target.value)}
-              placeholder="https://github.com/user/repo.git"
+              placeholder={t("git.remoteUrlPlaceholder")}
               className="w-full px-3 py-2 bg-secondary border border-border rounded-lg"
             />
           </div>
