@@ -276,7 +276,32 @@ impl ProjectDatabase {
         // Initialize schema
         conn.execute_batch(include_str!("../sql/project_schema.sql"))?;
 
+        // Run migrations for git_config if needed
+        Self::migrate_git_config(&conn)?;
+
         Ok(Self { conn })
+    }
+
+    fn migrate_git_config(conn: &Connection) -> Result<()> {
+        // Check if commit_message_style column exists
+        let column_exists: bool = conn
+            .query_row(
+                "SELECT COUNT(*) FROM pragma_table_info('git_config') WHERE name='commit_message_style'",
+                [],
+                |row| row.get::<_, i32>(0),
+            )
+            .unwrap_or(0) > 0;
+
+        if !column_exists {
+            // Add new columns for commit message generation (v1.4.0)
+            conn.execute_batch(
+                "ALTER TABLE git_config ADD COLUMN commit_message_style TEXT DEFAULT 'detailed';
+                 ALTER TABLE git_config ADD COLUMN commit_message_provider TEXT;
+                 ALTER TABLE git_config ADD COLUMN commit_message_language TEXT DEFAULT 'auto';"
+            ).ok(); // Ignore errors if columns already exist
+        }
+
+        Ok(())
     }
 
     pub fn get_connection(&self) -> &Connection {
@@ -486,6 +511,35 @@ impl ProjectDatabase {
         })?;
 
         files.collect()
+    }
+
+    /// Get all unique tags from all prompt files in the workspace
+    pub fn get_all_tags(&self) -> Result<Vec<String>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT DISTINCT tags FROM prompt_files WHERE tags IS NOT NULL"
+        )?;
+
+        let tags_rows = stmt.query_map([], |row| {
+            let tags_json: String = row.get(0)?;
+            Ok(tags_json)
+        })?;
+
+        let mut all_tags = std::collections::HashSet::new();
+        
+        for tags_row in tags_rows {
+            if let Ok(tags_json) = tags_row {
+                // Parse JSON array of tags
+                if let Ok(tags) = serde_json::from_str::<Vec<String>>(&tags_json) {
+                    for tag in tags {
+                        all_tags.insert(tag);
+                    }
+                }
+            }
+        }
+
+        let mut result: Vec<String> = all_tags.into_iter().collect();
+        result.sort();
+        Ok(result)
     }
 
     // Note: Execution history methods (save_execution, get_recent_executions) 
