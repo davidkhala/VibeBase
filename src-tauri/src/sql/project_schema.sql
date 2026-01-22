@@ -229,6 +229,11 @@ CREATE TABLE IF NOT EXISTS git_config (
     is_configured INTEGER DEFAULT 0,
     last_fetch INTEGER,
     
+    -- Commit Message Generation Settings (v1.4.0)
+    commit_message_style TEXT DEFAULT 'detailed',  -- 'concise' | 'detailed'
+    commit_message_provider TEXT,                  -- Provider ref for LLM
+    commit_message_language TEXT DEFAULT 'auto',   -- 'auto' | 'zh-CN' | 'en'
+    
     -- Timestamps
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
@@ -239,5 +244,8 @@ CREATE TABLE IF NOT EXISTS git_config (
 
 INSERT OR IGNORE INTO schema_migrations (version, applied_at, description)
 VALUES ('1.3.0', strftime('%s', 'now'), 'Add git_config table for Git integration');
+
+INSERT OR IGNORE INTO schema_migrations (version, applied_at, description)
+VALUES ('1.4.0', strftime('%s', 'now'), 'Add commit_message generation settings to git_config');
 
 
